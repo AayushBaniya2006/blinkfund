@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Upload, X, Loader2, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClientS3Uploader } from "@/lib/s3/clientS3Uploader";
 import {
   FileUpload,
   FileUploadDropzone,
@@ -79,65 +80,16 @@ function S3Uploader({
     error: null,
   });
 
+  const uploader = useMemo(
+    () => new ClientS3Uploader({ presignedRouteProvider }),
+    [presignedRouteProvider]
+  );
+
   const uploadFileToS3 = useCallback(
     async (file: File): Promise<string> => {
-      try {
-        // Get presigned URL and fields
-        const createUploadUrlResponse = await fetch(presignedRouteProvider, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-            ...meta,
-          }),
-        });
-
-        if (!createUploadUrlResponse.ok) {
-          const response = await createUploadUrlResponse.json();
-          throw new Error(response.error || "Failed to get upload URL");
-        }
-
-        const uploadData = await createUploadUrlResponse.json();
-
-        if (!uploadData.url) {
-          throw new Error("No upload URL received");
-        }
-
-        // Create FormData for S3 upload
-        const formData = new FormData();
-        const fields = uploadData.fields || {};
-
-        // Add all fields from presigned post
-        for (const [key, value] of Object.entries(fields)) {
-          formData.append(key, value as string);
-        }
-
-        // Add the file last
-        formData.append("file", file);
-
-        // Upload to S3
-        const uploadResponse = await fetch(uploadData.url, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-        }
-
-        // Construct the file URL
-        const fileUrl = `${uploadData.url}${fields.key || file.name}`;
-        return fileUrl;
-      } catch (error) {
-        console.error("S3 upload error:", error);
-        throw error;
-      }
+      return uploader.uploadFile(file, { meta });
     },
-    [presignedRouteProvider, meta]
+    [uploader, meta]
   );
 
   const handleFilesUpload = useCallback(
