@@ -15,8 +15,8 @@ export const GET = withAuthRequired(async (req, context) => {
   const currentPlan = await getCurrentPlan();
   const userFromDb = await getUser();
   return NextResponse.json<MeResponse>({
-    currentPlan,
     user: userFromDb,
+    currentPlan,
   });
 });
 
