@@ -3,6 +3,11 @@ import React from "react";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import getSubscribeUrl, {
+  PlanProvider,
+  PlanType,
+} from "@/lib/plans/getSubscribeUrl";
 
 const Hero2 = () => {
   return (
@@ -10,15 +15,48 @@ const Hero2 = () => {
       <div className="container text-center">
         <div className="mx-auto flex max-w-(--breakpoint-lg) flex-col gap-6">
           <h1 className="text-3xl font-extrabold lg:text-6xl">
-            Generate your website in minutes with AI in your browser
+            Generate AI Images using Nano Banana AI
           </h1>
           <p className="text-balance text-muted-foreground lg:text-lg">
-            We are a team of developers who are passionate about creating
-            beautiful and functional websites with AI in your browser.
+            Nano Banana AI is a platform that allows you to generate AI images
+            using the power of AI.
           </p>
         </div>
-        <Button size="lg" className="mt-10">
-            Get Started
+        <Button size="lg" className="mt-10" asChild>
+          <Link href="/join-waitlist">Get Started</Link>
+        </Button>
+        <Button size="lg" className="mt-10 ml-5" asChild>
+          <Link
+            href={getSubscribeUrl({
+              codename: "pro",
+              type: PlanType.ONETIME,
+              provider: PlanProvider.STRIPE,
+            })}
+          >
+            Buy Pro Lifetime Plan
+          </Link>
+        </Button>
+        <Button size="lg" className="mt-10 ml-5" asChild>
+          <Link
+            href={getSubscribeUrl({
+              codename: "pro",
+              type: PlanType.MONTHLY,
+              provider: PlanProvider.STRIPE,
+            })}
+          >
+            Buy Pro Monthly Plan
+          </Link>
+        </Button>
+        <Button size="lg" className="mt-10 ml-5" asChild>
+          <Link
+            href={getSubscribeUrl({
+              codename: "pro",
+              type: PlanType.YEARLY,
+              provider: PlanProvider.STRIPE,
+            })}
+          >
+            Buy Pro Yearly Plan
+          </Link>
         </Button>
         <div className="mx-auto mt-10 flex w-fit flex-col items-center gap-4 sm:flex-row">
           <span className="mx-4 inline-flex items-center -space-x-4">

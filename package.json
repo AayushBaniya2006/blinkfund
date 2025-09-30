@@ -95,8 +95,8 @@
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.1.2",
     "uuid": "^11.1.0",
+    "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -127,6 +127,9 @@
       "esbuild",
       "inngest-cli",
       "sharp"
+    ],
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide"
     ]
   }
 }

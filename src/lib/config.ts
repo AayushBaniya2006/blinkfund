@@ -1,36 +1,29 @@
 import { AppConfigPublic } from "./types";
 
 export const appConfig: AppConfigPublic = {
-  projectName: "Indie Kit",
-  projectSlug: "indie-kit",
+  projectName: "Nano Banana AI",
+  projectSlug: "nano-banana-ai",
   keywords: [
-    "Indie Kit",
-    "NextJS Boilerplate",
-    "NextJS SaaS",
-    "NextJS Starter Kit",
-    "SaaS Boilerplate",
-    "SaaS Starter Kit",
-    "Indie Kit Pro",
+    "Nano Banana AI",
+    "AI Images",
+    "AI Image Generator",
+    "AI Image Generator",
   ],
   description:
-    "Indie Kit is a NextJS starter kit for building your own SaaS in hours.",
+    "Nano Banana AI is a platform that allows you to generate AI images using the power of AI.",
   legal: {
     address: {
-      street: "Plot No 337, Workyard, Phase 2, Industrial Business &amp; Park",
-      city: "Chandigarh",
-      state: "Punjab",
-      postalCode: "160002",
-      country: "India",
+      street: "123 Main St",
+      city: "New York",
+      state: "NY",
+      postalCode: "10001",
+      country: "USA",
     },
     email: "ssent.hq@gmail.com",
     phone: "+91 9876543210",
   },
   social: {
     twitter: "https://twitter.com/cjsingg",
-    instagram: "https://instagram.com/-",
-    linkedin: "https://linkedin.com/-",
-    facebook: "https://facebook.com/-",
-    youtube: "https://youtube.com/-",
   },
   email: {
     senderName: "Indie Kit",

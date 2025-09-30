@@ -63,8 +63,8 @@ export function PlanForm({
       onetimePriceAnchor: 0,
       onetimePaypalPlanId: "",
       quotas: {
-        canUseApp: false,
-        numberOfThings: 0,
+        permiumSupport: false,
+        monthlyImages: 0,
         somethingElse: "",
       },
     },
@@ -503,7 +503,9 @@ export function PlanForm({
                       name="onetimePaypalPlanId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>PayPal Plan ID (Not Required for One-time Plans)</FormLabel>
+                          <FormLabel>
+                            PayPal Plan ID (Not Required for One-time Plans)
+                          </FormLabel>
                           <FormControl>
                             <Input {...field} value={"-"} disabled />
                           </FormControl>
@@ -529,7 +531,7 @@ export function PlanForm({
           <div className="grid gap-4 md:grid-cols-3">
             <FormField
               control={form.control}
-              name="quotas.canUseApp"
+              name="quotas.permiumSupport"
               render={({ field }) => (
                 <FormItem className="flex items-center gap-2">
                   <FormControl>
@@ -538,17 +540,17 @@ export function PlanForm({
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="mt-0!">Can Use App</FormLabel>
+                  <FormLabel className="mt-0!">Premium Support</FormLabel>
                 </FormItem>
               )}
             />
 
             <FormField
               control={form.control}
-              name="quotas.numberOfThings"
+              name="quotas.monthlyImages"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Number of Things</FormLabel>
+                  <FormLabel>Number of Monthly Images</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
