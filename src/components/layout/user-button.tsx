@@ -10,7 +10,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import useUser from "@/lib/users/useUser";
 import Link from "next/link";
-import { LayoutDashboard, CreditCard, LogOut, UserIcon, Ticket } from "lucide-react";
+import {
+  LayoutDashboard,
+  CreditCard,
+  LogOut,
+  UserIcon,
+  Ticket,
+} from "lucide-react";
 
 export function UserButton() {
   const { user } = useUser();
@@ -67,6 +73,12 @@ export function UserButton() {
           <Link href="/app/redeem-ltd" className="cursor-pointer">
             <Ticket className="mr-2 h-4 w-4" />
             Redeem LTD Coupon
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/app/profile" className="cursor-pointer">
+            <UserIcon className="mr-2 h-4 w-4" />
+            Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
