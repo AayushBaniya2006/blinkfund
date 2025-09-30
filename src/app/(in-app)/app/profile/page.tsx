@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, User, Camera } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 
 import useUser from "@/lib/users/useUser";
 import {

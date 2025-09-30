@@ -22,7 +22,8 @@ export interface S3UploaderProps {
   variant: "button" | "dropzone";
   onUpload: (fileUrls: string[]) => Promise<void>;
   currentFileUrl?: string | null;
-  meta?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  meta?: any; 
   className?: string;
   accept?: string;
   maxFiles?: number;
@@ -54,7 +55,6 @@ function S3Uploader({
   presignedRouteProvider,
   variant,
   onUpload,
-  currentFileUrl,
   meta,
   className,
   accept,
@@ -64,7 +64,6 @@ function S3Uploader({
   disabled = false,
   onFileValidate,
   onFileReject,
-  value,
   onChange,
   name,
   buttonText = "Upload File",
