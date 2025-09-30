@@ -13,10 +13,14 @@ interface WithManagerHandler {
     context: {
       session: NonNullable<
         Session & {
-          user: MeResponse["user"];
+          user: {
+            id: string;
+            email: string;
+          };
         }
       >;
       getCurrentPlan: () => Promise<MeResponse["currentPlan"]>;
+      getUser: () => Promise<MeResponse["user"]>;
       params: Promise<Record<string, unknown>>;
     }
   ): Promise<NextResponse | Response>;
@@ -74,12 +78,16 @@ const withAuthRequired = (handler: WithManagerHandler) => {
       return currentPlan[0];
     };
 
+    const getUser = async () => {
+      const user = await db.select().from(users).where(eq(users.id, userId));
+      return user[0];
+    };
+
     return await handler(req, {
       ...context,
-      // @ts-expect-error - session is typed correctly, but user is not
-      // althogh it is checked above
       session: session,
       getCurrentPlan,
+      getUser,
     });
   };
 };
