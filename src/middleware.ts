@@ -6,6 +6,8 @@ export async function middleware(req: NextRequest) {
   const session = await auth();
   const isAuth = !!session?.user;
 
+  const isAPI = req.nextUrl.pathname.startsWith("/api/app");
+
   const isAuthPage =
     req.nextUrl.pathname.startsWith("/sign-in") ||
     req.nextUrl.pathname.startsWith("/sign-up") ||
@@ -14,6 +16,13 @@ export async function middleware(req: NextRequest) {
   if (isAuthPage) {
     if (isAuth && !req.nextUrl.pathname.startsWith("/sign-out")) {
       return NextResponse.redirect(new URL("/app", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (isAPI) {
+    if(!isAuth) {
+      return NextResponse.json({error: "Unauthorized"}, {status: 401})
     }
     return NextResponse.next();
   }
@@ -49,6 +58,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/app/:path*",
     "/app/:path*",
     "/sign-in",
     "/sign-up",
