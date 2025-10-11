@@ -21,7 +21,7 @@ export function AuthForm({ className, callbackUrl, ...props }: AuthFormProps) {
   const router = useRouter();
 
 
-  const handleImpersonation = async (token: string) => {
+  const handleImpersonation = React.useCallback(async (token: string) => {
     setIsLoading(true);
     try {
       const result = await signIn("credentials", {
@@ -41,7 +41,7 @@ export function AuthForm({ className, callbackUrl, ...props }: AuthFormProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [callbackUrl, searchParams, router]);
 
   
   React.useEffect(() => {
