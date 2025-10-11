@@ -1,7 +1,11 @@
 import { db } from "@/db";
 import { plans } from "@/db/schema/plans";
 import { users } from "@/db/schema/user";
+import { render } from "@react-email/components";
 import { eq } from "drizzle-orm";
+import { appConfig } from "../config";
+import Welcome from "@/emails/Welcome";
+import sendMail from "../email/sendMail";
 
 const onUserCreate = async (newUser: {
   id: string;
@@ -21,6 +25,14 @@ const onUserCreate = async (newUser: {
       .where(eq(users.id, newUser.id));
   }
   // TIP: Send welcome email to user
+
+  const html = await render(
+    Welcome({
+      userName: newUser.name || "User",
+      dashboardUrl: `${appConfig.projectName}/dashboard`,
+    })
+  );
+  await sendMail(newUser.email!, `Welcome to ${appConfig.projectName}`, html);
 };
 
 export default onUserCreate;

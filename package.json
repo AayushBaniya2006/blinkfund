@@ -132,6 +132,9 @@
       "esbuild",
       "inngest-cli",
       "sharp"
+    ],
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide"
     ]
   }
 }
