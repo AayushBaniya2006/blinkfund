@@ -1,6 +1,5 @@
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
 import CreditsSuccessRedirector from "./CreditsSuccessRedirector";
-import CreditsErrorRedirector from "../error/CreditsErrorRedirector";
 
 export default async function CreditsSuccessPage({
   searchParams,

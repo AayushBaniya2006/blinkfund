@@ -180,6 +180,13 @@ function AppHomepage() {
               </Link>
             </Button>
 
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/app/credits/history">
+                <CreditCardIcon className="mr-2 h-4 w-4" />
+                Credits History
+              </Link>
+            </Button>
+
             <Button asChild variant="default" className="flex-1">
               <Link href="/super-admin">
                 <ShieldCheckIcon className="mr-2 h-4 w-4" />

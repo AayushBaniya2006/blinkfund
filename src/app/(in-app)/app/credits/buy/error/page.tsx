@@ -1,15 +1,6 @@
 import CreditsErrorRedirector from "./CreditsErrorRedirector";
 
-type ErrorCodeType =
-  | "INVALID_PARAMS"
-  | "PRICE_CALCULATION_ERROR"
-  | "STRIPE_ERROR"
-  | "PAYPAL_ERROR"
-  | "UNSUPPORTED_PROVIDER";
-
-export default async function CreditsErrorPage({
-  searchParams,
-}: {
+export default async function CreditsErrorPage({}: {
   searchParams: Promise<{ code?: string; message?: string }>;
 }) {
   // The error handling is done in the client component

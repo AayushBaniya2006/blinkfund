@@ -1,13 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BorderBeam } from "@/components/ui/border-beam";
-import { getCreditsBuyUrl, getCreditsPrice, type CreditType } from "@/lib/credits/credits";
+import {
+  getCreditsBuyUrl,
+  getCreditsPrice,
+  type CreditType,
+} from "@/lib/credits/credits";
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
 import useCurrentPlan from "@/lib/users/useCurrentPlan";
-import { Coins, Zap, Crown, Image, Video } from "lucide-react";
+import { Coins, Zap, Crown, Image, Video, LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -46,17 +56,15 @@ export default function WebsiteCreditsSection() {
   const getPackagePrice = (creditType: CreditType, credits: number) => {
     try {
       // Pass user's current plan for personalized pricing, fallback to base price for non-authenticated users
-      const validCurrentPlan = 
-        currentPlan && 
-        currentPlan.codename && 
-        currentPlan.quotas 
+      const validCurrentPlan =
+        currentPlan && currentPlan.codename && currentPlan.quotas
           ? {
               id: currentPlan.id,
               codename: currentPlan.codename,
               quotas: currentPlan.quotas,
             }
           : undefined;
-      
+
       return getCreditsPrice(creditType, credits, validCurrentPlan);
     } catch (error) {
       console.error("Error calculating price:", error);
@@ -73,11 +81,16 @@ export default function WebsiteCreditsSection() {
     window.location.href = url;
   };
 
-  const CreditTypeSection = ({ creditType, title, description, icon: Icon }: {
+  const CreditTypeSection = ({
+    creditType,
+    title,
+    description,
+    icon: Icon,
+  }: {
     creditType: CreditType;
     title: string;
     description: string;
-    icon: any;
+    icon: LucideIcon;
   }) => (
     <div className="space-y-8">
       <div className="text-center">
@@ -85,16 +98,15 @@ export default function WebsiteCreditsSection() {
           <Icon className="h-8 w-8 text-primary" />
           <h3 className="text-2xl font-bold">{title}</h3>
         </div>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          {description}
-        </p>
+        <p className="text-muted-foreground max-w-2xl mx-auto">{description}</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {creditPackages.map((pkg) => {
           const PackageIcon = pkg.icon;
           const price = getPackagePrice(creditType, pkg.credits);
-          const pricePerCredit = price > 0 ? (price / pkg.credits).toFixed(4) : "0";
+          const pricePerCredit =
+            price > 0 ? (price / pkg.credits).toFixed(4) : "0";
 
           return (
             <Card
@@ -102,25 +114,25 @@ export default function WebsiteCreditsSection() {
               className={`relative ${pkg.popular ? "border-primary shadow-lg scale-105" : ""}`}
             >
               {pkg.popular && <BorderBeam size={250} duration={12} delay={9} />}
-              
+
               <CardHeader className="text-center">
                 {pkg.popular && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     Most Popular
                   </Badge>
                 )}
-                
+
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                   <PackageIcon className="h-6 w-6 text-primary" />
                 </div>
-                
+
                 <CardTitle className="text-lg">{pkg.name}</CardTitle>
-                <CardDescription className="text-sm">{pkg.description}</CardDescription>
-                
+                <CardDescription className="text-sm">
+                  {pkg.description}
+                </CardDescription>
+
                 <div className="mt-4">
-                  <div className="text-2xl font-bold">
-                    ${price.toFixed(2)}
-                  </div>
+                  <div className="text-2xl font-bold">${price.toFixed(2)}</div>
                   <div className="text-xs text-muted-foreground">
                     {pkg.credits} credits • ${pricePerCredit}/credit
                   </div>
@@ -151,18 +163,24 @@ export default function WebsiteCreditsSection() {
             AI Credits for Everyone
           </h2>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-            Get instant access to our AI services with flexible credit packages. 
+            Get instant access to our AI services with flexible credit packages.
             No subscription required - pay only for what you use.
           </p>
         </div>
 
         <Tabs defaultValue="image_generation" className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-12">
-            <TabsTrigger value="image_generation" className="flex items-center gap-2">
+            <TabsTrigger
+              value="image_generation"
+              className="flex items-center gap-2"
+            >
               <Image className="h-4 w-4" />
               Image AI
             </TabsTrigger>
-            <TabsTrigger value="video_generation" className="flex items-center gap-2">
+            <TabsTrigger
+              value="video_generation"
+              className="flex items-center gap-2"
+            >
               <Video className="h-4 w-4" />
               Video AI
             </TabsTrigger>
@@ -189,7 +207,8 @@ export default function WebsiteCreditsSection() {
 
         <div className="text-center mt-12">
           <p className="text-sm text-muted-foreground">
-            Secure payments powered by Stripe • No monthly commitments • Instant activation
+            Secure payments powered by Stripe • No monthly commitments • Instant
+            activation
           </p>
           {currentPlan && currentPlan.codename && currentPlan.quotas && (
             <p className="text-sm text-primary mt-2 font-medium">

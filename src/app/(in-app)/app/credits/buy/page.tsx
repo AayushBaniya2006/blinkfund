@@ -2,9 +2,8 @@ import React from "react";
 import { auth, signIn } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema/user";
-import { plans } from "@/db/schema/plans";
-import { createPaypalOrderLink } from "@/lib/paypal/api";
-import { PlanProvider, PlanType } from "@/lib/plans/getSubscribeUrl";
+import { plans, Quotas } from "@/db/schema/plans";
+import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
 import stripe from "@/lib/stripe";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -61,7 +60,7 @@ async function CreditsBuyPage({
   const creditAmount = Number(amount);
 
   // Get user's current plan for pricing calculation
-  let userPlan: { id: string; codename: string; quotas: any } | undefined =
+  let userPlan: { id: string; codename: string; quotas: Quotas } | undefined =
     undefined;
   if (user.planId) {
     const currentPlan = await db

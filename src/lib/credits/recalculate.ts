@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { creditTransactions } from "@/db/schema/credits";
 import { users } from "@/db/schema/user";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { type CreditType } from "./credits";
 
 type CreditRecord = {
@@ -101,6 +101,7 @@ export async function addCreditTransaction(
   transactionType: "credit" | "debit" | "expired",
   amount: number,
   paymentId?: string | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<CreditRecord> {
   try {
@@ -214,6 +215,7 @@ export async function addCredits(
   creditType: CreditType,
   amount: number,
   paymentId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<CreditRecord> {
   return await addCreditTransaction(userId, creditType, "credit", amount, paymentId, metadata);
@@ -232,6 +234,7 @@ export async function deductCredits(
   userId: string,
   creditType: CreditType,
   amount: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<CreditRecord> {
   // Check if user has sufficient credits

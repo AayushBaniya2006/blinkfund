@@ -43,6 +43,7 @@ export const creditTransactions = pgTable("credit_transactions", {
     order_id?: string;
     planId?: string;
     expirationDate?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   }>(),
   
