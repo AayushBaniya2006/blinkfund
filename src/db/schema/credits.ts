@@ -7,7 +7,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { users } from "./user";
-import { type CreditType } from "@/lib/credits";
+import { type CreditType } from "@/lib/credits/credits";
 
 // Transaction types enum
 export const transactionTypeEnum = pgEnum("transaction_type", [

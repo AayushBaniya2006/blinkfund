@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { creditsConfig, creditTypeSchema } from "./config";
 import { Quotas } from "@/db/schema/plans";
+import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
 
 interface CreditBuySlab {
   from: number;
@@ -58,7 +59,7 @@ export const getCreditsPrice = (
 
   if (slabs && slabs.length > 0) {
     const slab = slabs.find((slab) => amount >= slab.from && amount <= slab.to);
-    return slab?.pricePerUnit ?? 0 * amount;
+    return (slab?.pricePerUnit ?? 0) * amount;
   }
   if (priceCalculator) {
     return priceCalculator(amount, userPlan);
@@ -67,17 +68,17 @@ export const getCreditsPrice = (
   throw new Error("Either slabs or priceCalculator must be provided");
 };
 
-export const getCreditsBuyUrl = (creditType: CreditType, amount: number) => {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy?creditType=${creditType}&amount=${amount}`;
+// Credit buy parameters validation
+export const creditBuyParams = z.object({
+  creditType: creditTypeSchema,
+  amount: z.number().positive(),
+  provider: z.nativeEnum(PlanProvider),
+});
+
+export type CreditBuyParams = z.infer<typeof creditBuyParams>;
+
+export const getCreditsBuyUrl = (params: CreditBuyParams) => {
+  const { creditType, amount, provider } = params;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy?creditType=${creditType}&amount=${amount}&provider=${provider}`;
   return url;
 };
-
-// Re-export credit transaction functions
-export {
-  recalculateUserCredits,
-  addCreditTransaction,
-  addCredits,
-  deductCredits,
-  getUserCredits,
-  getCreditTransactions,
-} from "./recalculate";

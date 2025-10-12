@@ -19,8 +19,10 @@ import {
   ExternalLinkIcon,
   DatabaseIcon,
   SettingsIcon,
+  CreditCardIcon,
 } from "lucide-react";
 import Link from "next/link";
+import useCredits from "@/lib/users/useCredits";
 
 function AppHomepage() {
   const {
@@ -28,9 +30,14 @@ function AppHomepage() {
     isLoading: planLoading,
     error: planError,
   } = useCurrentPlan();
+  const {
+    credits,
+    isLoading: creditsLoading,
+    error: creditsError,
+  } = useCredits();
   const { user, isLoading: userLoading, error: userError } = useUser();
 
-  const hasError = planError || userError;
+  const hasError = planError || userError || creditsError;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -48,7 +55,8 @@ function AppHomepage() {
       {hasError && (
         <Alert variant="destructive">
           <AlertDescription>
-            Error loading data: {planError?.message || userError?.message}
+            Error loading data:{" "}
+            {planError?.message || userError?.message || creditsError?.message}
           </AlertDescription>
         </Alert>
       )}
@@ -111,6 +119,34 @@ function AppHomepage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Credits Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCardIcon className="h-5 w-5" />
+            useCredits() Hook Output
+          </CardTitle>
+          <CardDescription>
+            Current credits data from the /api/app/me endpoint
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {creditsLoading ? (
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : credits ? (
+            <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-80">
+              {JSON.stringify(credits, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-muted-foreground">No credits data available</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Action Buttons Section */}
       <Card>

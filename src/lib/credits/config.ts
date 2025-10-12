@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type CreditsConfig } from ".";
+import { type CreditsConfig } from "./credits";
 
 export const creditTypeSchema = z.enum([
   "image_generation",

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { creditTransactions } from "@/db/schema/credits";
 import { users } from "@/db/schema/user";
 import { eq, and } from "drizzle-orm";
-import { type CreditType } from "./index";
+import { type CreditType } from "./credits";
 
 type CreditRecord = {
   [K in CreditType]?: number;
