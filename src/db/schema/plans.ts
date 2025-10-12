@@ -9,16 +9,16 @@ import {
 import { z } from "zod";
 
 export const quotaSchema = z.object({
-  canUseApp: z.boolean().default(true),
-  numberOfThings: z.number(),
+  permiumSupport: z.boolean().default(true),
+  monthlyImages: z.number(),
   somethingElse: z.string(),
 });
 
 export type Quotas = z.infer<typeof quotaSchema>;
 
 export const defaultQuotas: Quotas = {
-  canUseApp: false,
-  numberOfThings: 10,
+  permiumSupport: false,
+  monthlyImages: 10,
   somethingElse: "something",
 };
 

@@ -170,8 +170,8 @@ function AppHomepage() {
               variable
             </li>
             <li>
-              All components follow the &apos;use client&apos; directive for client-side
-              interactivity
+              All components follow the &apos;use client&apos; directive for
+              client-side interactivity
             </li>
             <li>
               Error handling and loading states are built-in to both hooks

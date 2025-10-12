@@ -25,6 +25,7 @@ export const users = pgTable("app_user", {
   email: text("email").unique().notNull(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
+  password: text("password"), // Hashed password for credential-based auth
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow(),
 
   credits: jsonb("credits").$type<CreditRecord>().default({}),

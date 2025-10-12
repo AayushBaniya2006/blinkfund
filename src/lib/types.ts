@@ -3,6 +3,9 @@ export interface AppConfigPublic {
   projectSlug: string;
   description: string;
   keywords: string[];
+  auth: {
+    enablePasswordAuth?: boolean;
+  };
   legal: {
     address: {
       street: string;

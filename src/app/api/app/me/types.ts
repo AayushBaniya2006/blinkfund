@@ -9,5 +9,5 @@ export interface MeResponse {
     quotas: (typeof plans.$inferSelect)["quotas"];
     default: (typeof plans.$inferSelect)["default"];
   } | null;
-  user: typeof users.$inferSelect;
+  user: Omit<typeof users.$inferSelect, "password">;
 }
