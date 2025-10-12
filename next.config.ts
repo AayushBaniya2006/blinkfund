@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     authInterrupts: true,
-  },
+  }
 };
 
 const withMDX = createMDX();

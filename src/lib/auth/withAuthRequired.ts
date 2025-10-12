@@ -79,8 +79,26 @@ const withAuthRequired = (handler: WithManagerHandler) => {
     };
 
     const getUser = async () => {
-      const user = await db.select().from(users).where(eq(users.id, userId));
-      return user[0];
+      const user = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+          createdAt: users.createdAt,
+          planId: users.planId,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId,
+          lemonSqueezyCustomerId: users.lemonSqueezyCustomerId,
+          lemonSqueezySubscriptionId: users.lemonSqueezySubscriptionId,
+          dodoCustomerId: users.dodoCustomerId,
+          dodoSubscriptionId: users.dodoSubscriptionId,
+          emailVerified: users.emailVerified,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .then((users) => users[0]);
+      return user;
     };
 
     return await handler(req, {

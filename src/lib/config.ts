@@ -14,6 +14,9 @@ export const appConfig: AppConfigPublic = {
   ],
   description:
     "Indie Kit is a NextJS starter kit for building your own SaaS in hours.",
+  auth: {
+    enablePasswordAuth: true, // Set to true to enable password-based authentication
+  },
   legal: {
     address: {
       street: "Plot No 337, Workyard, Phase 2, Industrial Business &amp; Park",
