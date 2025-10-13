@@ -99,6 +99,7 @@ export const createCreditCheckout = async (params: {
           create_new_customer: true,
         };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const productCartItem: any = {
       product_id: productId,
       quantity: 1, // Always 1 for credit purchases, actual amount is in metadata

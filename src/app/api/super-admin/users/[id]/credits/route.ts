@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import withSuperAdminAuthRequired from "@/lib/auth/withSuperAdminAuthRequired";
 import {
   getUserCredits,

@@ -215,14 +215,13 @@ async function CreditsBuyPage({
       const taxId = tax_id;
 
       // Create checkout session based on plan type
-      let dodoCheckoutResponse;
       const dodoProductId = process.env.DODO_CREDITS_PRODUCT_ID;
 
       if (!dodoProductId) {
         throw new Error("Dodo product ID not found");
       }
 
-      dodoCheckoutResponse = await createCreditCheckout({
+      const dodoCheckoutResponse = await createCreditCheckout({
         productId: dodoProductId,
         customerEmail: session?.user?.email ?? "",
         customerId: user.dodoCustomerId ?? undefined,
