@@ -15,7 +15,7 @@ import {
   type CreditType,
 } from "@/lib/credits/credits";
 import { createPaypalCreditOrderLink } from "@/lib/paypal/api";
-import { createOneTimePaymentCheckout, createCreditCheckout } from "@/lib/dodopayments";
+import { createCreditCheckout } from "@/lib/dodopayments";
 
 async function CreditsBuyPage({
   searchParams,

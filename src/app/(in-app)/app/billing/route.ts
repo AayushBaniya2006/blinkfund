@@ -1,5 +1,4 @@
 import { db } from "@/db";
-import { users } from "@/db/schema/user";
 import withAuthRequired from "@/lib/auth/withAuthRequired";
 import { eq } from "drizzle-orm";
 import stripe from "@/lib/stripe";
@@ -9,13 +8,14 @@ import client from "@/lib/dodopayments/client";
 import { paypalContext } from "@/db/schema/paypal";
 
 export const GET = withAuthRequired(async (req, context) => {
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, context.session.user.id))
-    .limit(1)
-    .then((res) => res[0]);
+  const user = await context.getUser();
 
+  const dodoCustomerId = user.dodoCustomerId;
+  if (dodoCustomerId) {
+    const customerPortalSession =
+      await client.customers.customerPortal.create(dodoCustomerId);
+    return redirect(customerPortalSession.link);
+  }
   const stripeCustomerId = user.stripeCustomerId;
 
   if (stripeCustomerId) {
@@ -29,13 +29,6 @@ export const GET = withAuthRequired(async (req, context) => {
   const lemonSqueezyCustomerId = user.lemonSqueezyCustomerId;
   if (lemonSqueezyCustomerId) {
     // TODO: Get lemonSqueezy customer and redirect to lemonSqueezy customer portal
-  }
-
-  const dodoCustomerId = user.dodoCustomerId;
-  if (dodoCustomerId) {
-    const customerPortalSession =
-      await client.customers.customerPortal.create(dodoCustomerId);
-    return redirect(customerPortalSession.link);
   }
 
   // Check if has paypal context
