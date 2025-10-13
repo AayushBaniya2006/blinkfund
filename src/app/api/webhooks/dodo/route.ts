@@ -8,6 +8,8 @@ import { eq, or } from "drizzle-orm";
 import updatePlan from "@/lib/plans/updatePlan";
 import downgradeToDefaultPlan from "@/lib/plans/downgradeToDefaultPlan";
 import { allocatePlanCredits } from "@/lib/credits/allocatePlanCredits";
+import { addCredits } from "@/lib/credits/recalculate";
+import { CreditType } from "@/lib/credits/credits";
 import { Webhook } from "standardwebhooks";
 
 class DodoPaymentsWebhookHandler {
@@ -22,7 +24,74 @@ class DodoPaymentsWebhookHandler {
   }
 
   async handleOutsidePlanManagementProductPaid() {
-    // TODO: Implement your own logic here
+    const payment = this.data;
+    
+    // Check if this is a credit purchase using metadata
+    const metadata = payment.metadata;
+    
+    if (metadata?.purchaseType === "credits") {
+      // This is a credit purchase - extract info from metadata
+      const creditType = metadata.creditType;
+      const creditAmount = parseInt(metadata.creditAmount);
+      const userId = metadata.userId;
+      const paymentId = payment.payment_id || `payment_${payment.customer.customer_id}_${Date.now()}`;
+      
+      if (!creditType || !creditAmount || creditAmount <= 0 || !userId) {
+        console.error("Invalid credit metadata in DodoPayments webhook:", {
+          creditType,
+          creditAmount,
+          userId,
+          metadata
+        });
+        return;
+      }
+
+      try {
+        // Use the userId from metadata instead of looking up by email
+        // But still ensure user exists and update customer info if needed
+        const { user } = await getOrCreateUser({
+          emailId: payment.customer.email,
+          name: payment.customer.name,
+        });
+
+        // Verify the user ID matches (security check)
+        if (user.id !== userId) {
+          console.error("User ID mismatch in DodoPayments webhook:", {
+            metadataUserId: userId,
+            actualUserId: user.id,
+            email: payment.customer.email
+          });
+          return;
+        }
+
+        // Add credits with payment ID for idempotency
+        await addCredits(
+          userId,
+          creditType as CreditType,
+          creditAmount,
+          paymentId,
+          {
+            reason: "Purchase via DodoPayments",
+            dodoPaymentId: paymentId,
+            dodoCustomerId: payment.customer.customer_id,
+            totalPrice: metadata.totalPrice,
+          }
+        );
+
+        console.log(`Successfully added ${creditAmount} ${creditType} credits to user ${userId} via DodoPayments payment ${paymentId}`);
+      } catch (error) {
+        console.error("Error adding credits from DodoPayments:", error);
+        // If it's a duplicate payment error, that's okay - idempotency working
+        if (error instanceof Error && error.message.includes("already exists")) {
+          console.log(`Credits purchase already processed for DodoPayments payment ${paymentId}`);
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+    } else {
+      // Handle other non-plan products here if needed
+      console.log("DodoPayments payment for non-plan, non-credit product. Metadata:", metadata);
+    }
   }
 
   // Payment Events

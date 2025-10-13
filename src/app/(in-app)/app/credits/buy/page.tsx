@@ -15,6 +15,7 @@ import {
   type CreditType,
 } from "@/lib/credits/credits";
 import { createPaypalCreditOrderLink } from "@/lib/paypal/api";
+import { createOneTimePaymentCheckout, createCreditCheckout } from "@/lib/dodopayments";
 
 async function CreditsBuyPage({
   searchParams,
@@ -23,6 +24,12 @@ async function CreditsBuyPage({
     creditType: CreditType;
     amount: string;
     provider: PlanProvider;
+    billing_country?: string;
+    billing_state?: string;
+    billing_city?: string;
+    billing_street?: string;
+    billing_zipcode?: string;
+    tax_id?: string;
   }>;
 }) {
   const { creditType, amount, provider } = await searchParams;
@@ -97,7 +104,6 @@ async function CreditsBuyPage({
     );
   }
 
-
   switch (provider) {
     case PlanProvider.PAYPAL:
       // Create PayPal order for credit purchase
@@ -166,6 +172,78 @@ async function CreditsBuyPage({
       // Success: redirect immediately to Stripe checkout
       return redirect(stripeCheckoutSession.url);
 
+    case PlanProvider.DODO:
+      const {
+        billing_country,
+        billing_state,
+        billing_city,
+        billing_street,
+        billing_zipcode,
+        tax_id,
+      } = await searchParams;
+      // Check if billing information is provided in the query parameters
+      const hasBillingInfo =
+        billing_country &&
+        billing_state &&
+        billing_city &&
+        billing_street &&
+        billing_zipcode;
+
+      // If not, redirect to the billing form
+      if (!hasBillingInfo) {
+        // Create the current URL as the callback URL
+        const currentUrl = new URL(
+          `/app/credits/buy`,
+          process.env.NEXT_PUBLIC_APP_URL
+        );
+
+        // Add all current search params to the URL
+        Object.entries(searchParams).forEach(([key, value]) => {
+          if (typeof value === "string") {
+            currentUrl.searchParams.set(key, value);
+          }
+        });
+
+        return redirect(
+          `/app/subscribe/billing-form?callbackUrl=${encodeURIComponent(
+            currentUrl.toString()
+          )}`
+        );
+      }
+
+      // Extract tax ID from query parameters if available
+      const taxId = tax_id;
+
+      // Create checkout session based on plan type
+      let dodoCheckoutResponse;
+      const dodoProductId = process.env.DODO_CREDITS_PRODUCT_ID;
+
+      if (!dodoProductId) {
+        throw new Error("Dodo product ID not found");
+      }
+
+      dodoCheckoutResponse = await createCreditCheckout({
+        productId: dodoProductId,
+        customerEmail: session?.user?.email ?? "",
+        customerId: user.dodoCustomerId ?? undefined,
+        billing: {
+          country: billing_country,
+          state: billing_state,
+          city: billing_city,
+          street: billing_street,
+          zipcode: billing_zipcode,
+        },
+        taxId: taxId,
+        creditAmount: creditAmount,
+        creditType: creditType,
+        userId: user.id,
+        totalPrice: totalPrice, // Pass the calculated price for pay-what-you-want
+      });
+
+      if (!dodoCheckoutResponse.payment_link) {
+        throw new Error("DodoPayments checkout link not found");
+      }
+      return redirect(dodoCheckoutResponse.payment_link);
     default:
       return redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy/error?code=UNSUPPORTED_PROVIDER&message=Payment provider not supported`
