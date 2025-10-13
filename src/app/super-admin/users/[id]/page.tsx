@@ -53,6 +53,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Minus, CreditCard, History } from "lucide-react";
+import { enableCredits } from "@/lib/credits/config";
 
 interface UserDetails {
   id: string;
@@ -300,14 +301,16 @@ export default function UserDetailsPage() {
           <h1 className="text-2xl font-bold">User Details</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsCreditModalOpen(true)}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Manage Credits
-          </Button>
+          {enableCredits && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreditModalOpen(true)}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Manage Credits
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleImpersonate}>
             <User className="h-4 w-4 mr-2" />
             Impersonate
@@ -624,143 +627,149 @@ export default function UserDetailsPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="flex flex-row gap-6">
-        <Card className="flex-1">
-          <CardHeader>
-            <CardTitle>Credits & History</CardTitle>
-            <CardDescription>
-              User credit balances and transaction history.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="balance" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="balance">Current Balance</TabsTrigger>
-                <TabsTrigger value="history">Transaction History</TabsTrigger>
-              </TabsList>
+      {enableCredits && (
+        <div className="flex flex-row gap-6">
+          <Card className="flex-1">
+            <CardHeader>
+              <CardTitle>Credits & History</CardTitle>
+              <CardDescription>
+                User credit balances and transaction history.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="balance" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="balance">Current Balance</TabsTrigger>
+                  <TabsTrigger value="history">Transaction History</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="balance" className="space-y-4">
-                {creditData?.currentCredits ? (
-                  <div className="flex flex-col gap-3">
-                    {Object.entries(creditData.currentCredits).map(
-                      ([type, amount]) => (
-                        <div
-                          key={type}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {formatCreditType(type)}
-                            </span>
-                          </div>
-                          <Badge variant={amount > 0 ? "default" : "secondary"}>
-                            {amount} credits
-                          </Badge>
-                        </div>
-                      )
-                    )}
-                    {Object.keys(creditData.currentCredits).length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No credits available
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Loading credits...
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="history" className="space-y-4">
-                {creditData?.transactions ? (
-                  <>
-                    <div className="space-y-2">
-                      {creditData.transactions.map((transaction) => (
-                        <div
-                          key={transaction.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex flex-col gap-1">
+                <TabsContent value="balance" className="space-y-4">
+                  {creditData?.currentCredits ? (
+                    <div className="flex flex-col gap-3">
+                      {Object.entries(creditData.currentCredits).map(
+                        ([type, amount]) => (
+                          <div
+                            key={type}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
                             <div className="flex items-center gap-2">
-                              <Badge
-                                variant={
-                                  transaction.transactionType === "credit"
-                                    ? "default"
-                                    : transaction.transactionType === "debit"
-                                      ? "destructive"
-                                      : "secondary"
-                                }
-                              >
-                                {transaction.transactionType === "credit"
-                                  ? "+"
-                                  : "-"}
-                                {transaction.amount}
-                              </Badge>
-                              <span className="text-sm font-medium">
-                                {formatCreditType(transaction.creditType)}
+                              <CreditCard className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">
+                                {formatCreditType(type)}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {transaction.metadata?.reason ||
-                                "No reason provided"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(transaction.createdAt).toLocaleString()}
-                            </p>
-                          </div>
-                          {transaction.metadata?.adminAction && (
-                            <Badge variant="outline" className="text-xs">
-                              Admin Action
+                            <Badge
+                              variant={amount > 0 ? "default" : "secondary"}
+                            >
+                              {amount} credits
                             </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {creditData.pagination && (
-                      <div className="flex items-center justify-between pt-4">
-                        <p className="text-sm text-muted-foreground">
-                          Page {creditData.pagination.page} of{" "}
-                          {creditData.pagination.totalPages}(
-                          {creditData.pagination.total} total)
+                          </div>
+                        )
+                      )}
+                      {Object.keys(creditData.currentCredits).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No credits available
                         </p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCreditPage(creditPage - 1)}
-                            disabled={!creditData.pagination.hasPrev}
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Loading credits...
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="history" className="space-y-4">
+                  {creditData?.transactions ? (
+                    <>
+                      <div className="space-y-2">
+                        {creditData.transactions.map((transaction) => (
+                          <div
+                            key={transaction.id}
+                            className="flex items-center justify-between p-3 border rounded-lg"
                           >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCreditPage(creditPage + 1)}
-                            disabled={!creditData.pagination.hasNext}
-                          >
-                            Next
-                          </Button>
-                        </div>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={
+                                    transaction.transactionType === "credit"
+                                      ? "default"
+                                      : transaction.transactionType === "debit"
+                                        ? "destructive"
+                                        : "secondary"
+                                  }
+                                >
+                                  {transaction.transactionType === "credit"
+                                    ? "+"
+                                    : "-"}
+                                  {transaction.amount}
+                                </Badge>
+                                <span className="text-sm font-medium">
+                                  {formatCreditType(transaction.creditType)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {transaction.metadata?.reason ||
+                                  "No reason provided"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(
+                                  transaction.createdAt
+                                ).toLocaleString()}
+                              </p>
+                            </div>
+                            {transaction.metadata?.adminAction && (
+                              <Badge variant="outline" className="text-xs">
+                                Admin Action
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Loading transaction history...
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+
+                      {creditData.pagination && (
+                        <div className="flex items-center justify-between pt-4">
+                          <p className="text-sm text-muted-foreground">
+                            Page {creditData.pagination.page} of{" "}
+                            {creditData.pagination.totalPages}(
+                            {creditData.pagination.total} total)
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCreditPage(creditPage - 1)}
+                              disabled={!creditData.pagination.hasPrev}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCreditPage(creditPage + 1)}
+                              disabled={!creditData.pagination.hasNext}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Loading transaction history...
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
