@@ -15,7 +15,6 @@ class DodoPaymentsWebhookHandler {
   private data: any;
   private eventType: string;
 
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(data: any, eventType: string) {
     this.data = data;
@@ -29,7 +28,7 @@ class DodoPaymentsWebhookHandler {
   // Payment Events
   async onPaymentSucceeded() {
     const payment = this.data;
-    
+
     if (!payment?.customer?.email) {
       return;
     }
@@ -69,17 +68,19 @@ class DodoPaymentsWebhookHandler {
         });
 
         // Allocate plan-based credits
-        await allocatePlanCredits(
-          user.id,
-          dbPlan.id,
-          payment.payment_id || `payment_${payment.customer.customer_id}_${Date.now()}`,
-          {
+        await allocatePlanCredits({
+          userId: user.id,
+          planId: dbPlan.id,
+          paymentId:
+            payment.payment_id ||
+            `payment_${payment.customer.customer_id}_${Date.now()}`,
+          paymentMetadata: {
             source: "dodo_payment",
             customerId: payment.customer.customer_id,
             customerEmail: payment.customer.email,
             productId,
-          }
-        );
+          },
+        });
       }
     } catch (error) {
       throw error;
@@ -208,18 +209,18 @@ class DodoPaymentsWebhookHandler {
       await updatePlan({ userId: user.id, newPlanId: dbPlan.id });
 
       // Allocate plan-based credits
-      await allocatePlanCredits(
-        user.id,
-        dbPlan.id,
-        subscription.subscription_id,
-        {
+      await allocatePlanCredits({
+        userId: user.id,
+        planId: dbPlan.id,
+        paymentId: subscription.subscription_id,
+        paymentMetadata: {
           source: "dodo_subscription",
           subscriptionId: subscription.subscription_id,
           customerId: subscription.customer.customer_id,
           customerEmail: subscription.customer.email,
           productId,
-        }
-      );
+        },
+      });
     } catch (error) {
       throw error;
     }
@@ -278,18 +279,17 @@ class DodoPaymentsWebhookHandler {
       }
 
       await updatePlan({ userId: user[0].id, newPlanId: dbPlan.id });
-
       // Allocate plan-based credits
-      await allocatePlanCredits(
-        user[0].id,
-        dbPlan.id,
-        subscription.subscription_id,
-        {
+      await allocatePlanCredits({
+        planId: dbPlan.id,
+        userId: user[0].id,
+        paymentId: subscription.subscription_id,
+        paymentMetadata: {
           source: "dodo_subscription_renewed",
           subscriptionId: subscription.subscription_id,
           productId,
-        }
-      );
+        },
+      });
     } catch (error) {
       // Handle error
       console.error(error);
@@ -386,7 +386,7 @@ async function handler(req: NextRequest) {
       const bodyText = await req.text();
       // Check if webhook signing is configured
       const webhookSecret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
-      
+
       if (webhookSecret) {
         // Retrieve the event by verifying the signature using the raw body and secret
         try {
@@ -396,14 +396,17 @@ async function handler(req: NextRequest) {
             "webhook-signature": req.headers.get("webhook-signature") as string,
             "webhook-timestamp": req.headers.get("webhook-timestamp") as string,
           };
-          
+
           await webhook.verify(bodyText, headers);
         } catch (err) {
           console.error(err);
-          return NextResponse.json({
-            received: true,
-            error: "Webhook signature verification failed",
-          }, { status: 401 });
+          return NextResponse.json(
+            {
+              received: true,
+              error: "Webhook signature verification failed",
+            },
+            { status: 401 }
+          );
         }
       } else {
         if (process.env.NODE_ENV !== "development") {
@@ -420,7 +423,7 @@ async function handler(req: NextRequest) {
       const data = JSON.parse(bodyText);
       const eventType = data.type;
       const eventData = data.data;
-      
+
       const handler = new DodoPaymentsWebhookHandler(eventData, eventType);
       try {
         switch (eventType) {
@@ -506,7 +509,7 @@ async function handler(req: NextRequest) {
           default:
             break;
         }
-        
+
         return NextResponse.json({ received: true });
       } catch (error) {
         if (error instanceof APIError) {
@@ -515,23 +518,32 @@ async function handler(req: NextRequest) {
             message: error.message,
           });
         }
-        return NextResponse.json({
-          received: true,
-          error: "Unexpected error processing webhook",
-        }, { status: 500 });
+        return NextResponse.json(
+          {
+            received: true,
+            error: "Unexpected error processing webhook",
+          },
+          { status: 500 }
+        );
       }
     } catch (error) {
       console.error(error);
-      return NextResponse.json({
-        received: false,
-        error: "Invalid webhook payload",
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          received: false,
+          error: "Invalid webhook payload",
+        },
+        { status: 400 }
+      );
     }
   } else {
-    return NextResponse.json({
-      received: false,
-      error: "Method not allowed",
-    }, { status: 405 });
+    return NextResponse.json(
+      {
+        received: false,
+        error: "Method not allowed",
+      },
+      { status: 405 }
+    );
   }
 }
 

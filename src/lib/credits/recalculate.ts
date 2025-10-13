@@ -48,11 +48,6 @@ export async function recalculateUserCredits(userId: string): Promise<CreditReco
           creditBalances[creditType]! -= amount;
           break;
       }
-
-      // Ensure balance doesn't go below 0
-      if (creditBalances[creditType]! < 0) {
-        creditBalances[creditType] = 0;
-      }
     }
 
     // Update user's credits field
@@ -151,8 +146,7 @@ export async function addCreditTransaction(
       case "debit":
       case "expired":
         newBalance -= amount;
-        // Ensure balance doesn't go below 0
-        newBalance = Math.max(0, newBalance);
+        // Do not care about negative balance as bans can cause this
         break;
     }
 
@@ -248,32 +242,4 @@ export async function deductCredits(
   }
 
   return await addCreditTransaction(userId, creditType, "debit", amount, null, metadata);
-}
-
-/**
- * Gets credit transaction history for a user
- * @param userId - User ID
- * @param limit - Optional limit for number of transactions
- * @returns Promise<CreditTransaction[]> - Array of credit transactions
- */
-export async function getCreditTransactions(
-  userId: string,
-  limit?: number
-) {
-  try {
-    const query = db
-      .select()
-      .from(creditTransactions)
-      .where(eq(creditTransactions.userId, userId))
-      .orderBy(creditTransactions.createdAt);
-
-    if (limit) {
-      return await query.limit(limit);
-    }
-
-    return await query;
-  } catch (error) {
-    console.error("Error getting credit transactions:", error);
-    throw new Error(`Failed to get credit transactions for user ${userId}`);
-  }
 }
