@@ -6,6 +6,8 @@ import updatePlan from "@/lib/plans/updatePlan";
 import downgradeToDefaultPlan from "@/lib/plans/downgradeToDefaultPlan";
 import { paypalContext } from "@/db/schema/paypal";
 import { PAYPAL_BASE_URL, getPaypalAuthToken } from "@/lib/paypal/api";
+import { addCredits } from "@/lib/credits/recalculate";
+import { CreditType } from "@/lib/credits/credits";
 
 class PayPalWebhookHandler {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,9 +24,50 @@ class PayPalWebhookHandler {
     const [context] = await db.select().from(paypalContext).where(eq(paypalContext.paypalOrderId, orderId)).limit(1);
     if (!context) return;
     const userId = context.userId;
-    const planId = context.planId;
-    if (!userId || !planId) return;
-    await updatePlan({ userId, newPlanId: planId });
+    if (!userId) return;
+
+    // Check if this is a credit purchase or plan purchase
+    if (context.purchaseType === "credits" && context.creditType && context.creditAmount) {
+      // Handle credit purchase
+      try {
+        const creditAmount = parseInt(context.creditAmount);
+        if (isNaN(creditAmount) || creditAmount <= 0) {
+          console.error("Invalid credit amount:", context.creditAmount);
+          return;
+        }
+
+        // Add credits with PayPal order ID as payment ID for idempotency
+        await addCredits(
+          userId,
+          context.creditType as CreditType,
+          creditAmount,
+          orderId,
+          {
+            reason: "Purchase via PayPal",
+            paypalOrderId: orderId,
+            paypalContextId: context.id,
+          }
+        );
+
+        console.log(`Successfully added ${creditAmount} ${context.creditType} credits to user ${userId} via PayPal order ${orderId}`);
+      } catch (error) {
+        console.error("Error adding credits from PayPal:", error);
+        // If it's a duplicate payment error, that's okay - idempotency working
+        if (error instanceof Error && error.message.includes("already exists")) {
+          console.log(`Credits purchase already processed for PayPal order ${orderId}`);
+        } else {
+          // Don't return early on error - still update the context status
+          console.error(`Failed to add credits for PayPal order ${orderId}:`, error);
+        }
+      }
+    } else if (context.planId) {
+      // Handle plan purchase
+      await updatePlan({ userId, newPlanId: context.planId });
+    } else {
+      console.error("PayPal order completed but no plan or credit information found:", context);
+      return;
+    }
+
     await db.update(paypalContext).set({ status: "success" }).where(eq(paypalContext.id, context.id));
   }
 

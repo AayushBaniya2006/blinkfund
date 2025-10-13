@@ -1,4 +1,5 @@
-import React from "react";
+"use server";
+
 import { auth, signIn } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema/user";
@@ -13,6 +14,7 @@ import {
   getCreditsPrice,
   type CreditType,
 } from "@/lib/credits/credits";
+import { createPaypalCreditOrderLink } from "@/lib/paypal/api";
 
 async function CreditsBuyPage({
   searchParams,
@@ -95,15 +97,20 @@ async function CreditsBuyPage({
     );
   }
 
+
   switch (provider) {
     case PlanProvider.PAYPAL:
-      // For now, redirect to error as PayPal requires more complex setup for credits
-      // This would need a custom PayPal order creation function for credits
-      return redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy/error?code=PAYPAL_NOT_IMPLEMENTED&message=${encodeURIComponent(
-          "PayPal support for credits is not yet implemented. Please use Stripe."
-        )}`
+      // Create PayPal order for credit purchase
+
+      const paypalOrderUrl = await createPaypalCreditOrderLink(
+        creditType,
+        creditAmount,
+        totalPrice * 100, // Convert to cents
+        user.id
       );
+
+      // Success: redirect immediately to PayPal checkout
+      return redirect(paypalOrderUrl);
 
     case PlanProvider.STRIPE:
       // Create a one-time payment checkout session
@@ -157,15 +164,13 @@ async function CreditsBuyPage({
       }
 
       // Success: redirect immediately to Stripe checkout
-      redirect(stripeCheckoutSession.url);
+      return redirect(stripeCheckoutSession.url);
 
     default:
       return redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy/error?code=UNSUPPORTED_PROVIDER&message=Payment provider not supported`
       );
   }
-
-  return <></>;
 }
 
 export default CreditsBuyPage;

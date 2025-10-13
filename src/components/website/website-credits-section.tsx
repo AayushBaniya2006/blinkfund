@@ -51,7 +51,7 @@ const creditPackages = [
 
 export default function WebsiteCreditsSection() {
   const { currentPlan } = useCurrentPlan();
-  const [selectedProvider] = useState<PlanProvider>(PlanProvider.STRIPE);
+  const [selectedProvider] = useState<PlanProvider>(PlanProvider.PAYPAL);
 
   const getPackagePrice = (creditType: CreditType, credits: number) => {
     try {

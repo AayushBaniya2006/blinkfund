@@ -69,7 +69,7 @@ export default function CreditsSuccessRedirector() {
               <Link href="/app">Go to Dashboard</Link>
             </Button>
             <Button variant="outline" asChild className="w-full sm:w-auto">
-              <Link href="/app/credits">View Credits</Link>
+              <Link href="/app/credits/history">View Credits</Link>
             </Button>
           </div>
         </div>
