@@ -16,6 +16,7 @@ import {
 } from "@/lib/credits/credits";
 import { createPaypalCreditOrderLink } from "@/lib/paypal/api";
 import { createCreditCheckout } from "@/lib/dodopayments";
+import { enableCredits } from "@/lib/credits/config";
 
 async function CreditsBuyPage({
   searchParams,
@@ -32,6 +33,11 @@ async function CreditsBuyPage({
     tax_id?: string;
   }>;
 }) {
+  if (!enableCredits) {
+    return redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy/error?code=CREDITS_DISABLED&message=Credits are disabled`
+    );
+  }
   const { creditType, amount, provider } = await searchParams;
 
   try {

@@ -25,6 +25,8 @@ export default function CreditsErrorRedirector() {
         return "PayPal support for credits is not yet available.";
       case "UNSUPPORTED_PROVIDER":
         return "The selected payment provider is not supported.";
+      case "CREDITS_DISABLED":
+        return "Credits are disabled for this application. Check https://docs.indiekit.pro/payments/credits-system to see how to enable them.";
       default:
         return message || "An error occurred during your credit purchase.";
     }

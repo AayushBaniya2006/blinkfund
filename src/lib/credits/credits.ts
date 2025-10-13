@@ -3,6 +3,7 @@ import { z } from "zod";
 import { creditsConfig, creditTypeSchema } from "./config";
 import { Quotas } from "@/db/schema/plans";
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
+import { MeResponse } from "@/app/api/app/me/types";
 
 interface CreditBuySlab {
   from: number;
@@ -98,4 +99,23 @@ export const getCreditsBuyUrl = (params: CreditBuyParams) => {
   const { creditType, amount, provider } = params;
   const url = `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy?creditType=${creditType}&amount=${amount}&provider=${provider}`;
   return url;
+};
+
+/**
+ * Checks if a user can deduct credits
+ * @param creditType - The type of credit to deduct
+ * @param amount
+ * @param user - The user to check
+ * @returns boolean
+ */
+export const canDeductCredits = (
+  creditType: CreditType,
+  amount: number,
+  user: Pick<MeResponse["user"], "credits">
+) => {
+  const currentCredits = user.credits?.[creditType] || 0;
+  if (currentCredits < amount) {
+    return false;
+  }
+  return true;
 };
