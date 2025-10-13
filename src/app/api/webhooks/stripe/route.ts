@@ -12,6 +12,7 @@ import downgradeToDefaultPlan from "@/lib/plans/downgradeToDefaultPlan";
 import { addCredits } from "@/lib/credits/recalculate";
 import { type CreditType } from "@/lib/credits/credits";
 import { creditTypeSchema } from "@/lib/credits/config";
+import { allocatePlanCredits } from "@/lib/credits/allocatePlanCredits";
 
 class StripeWebhookHandler {
   private data: Stripe.Event.Data;
@@ -131,6 +132,19 @@ class StripeWebhookHandler {
           userId: user.id,
           newPlanId: dbPlan.id,
         });
+
+        // Allocate plan-based credits
+        await allocatePlanCredits({
+          userId: user.id,
+          planId: dbPlan.id,
+          paymentId: object.id,
+          paymentMetadata: {
+            source: "stripe_invoice",
+            invoiceId: object.id,
+            customerId: object.customer,
+            subscriptionId: object.subscription,
+          }
+        });
       }
     } else {
       await this.handleOutsidePlanManagementProductInvoicePaid();
@@ -191,6 +205,18 @@ class StripeWebhookHandler {
     }
 
     await updatePlan({ userId: user[0].id, newPlanId: dbPlan.id });
+
+    // Allocate plan-based credits
+    await allocatePlanCredits({
+      userId: user[0].id,
+      planId: dbPlan.id,
+      paymentId: object.id,
+      paymentMetadata: {
+        source: "stripe_subscription_updated",
+        subscriptionId: object.id,
+        status: object.status,
+      }
+    });
   }
 
   async _getStripeCustomer(
@@ -237,6 +263,18 @@ class StripeWebhookHandler {
       .set({ stripeSubscriptionId: object.id })
       .where(eq(users.id, user.id));
     await updatePlan({ userId: user.id, newPlanId: dbPlan.id });
+
+    // Allocate plan-based credits
+    await allocatePlanCredits({
+      userId: user.id,
+      planId: dbPlan.id,
+      paymentId: object.id,
+      paymentMetadata: {
+        source: "stripe_subscription_created",
+        subscriptionId: object.id,
+        customerId: customer.id,
+      }
+    });
   }
 
   async onSubscriptionDeleted() {
@@ -331,6 +369,21 @@ class StripeWebhookHandler {
     await updatePlan({
       userId: user.id,
       newPlanId: dbPlan.id,
+    });
+
+    // Allocate plan-based credits
+    await allocatePlanCredits({
+      userId: user.id,
+      planId: dbPlan.id,
+      paymentId: object.id,
+      paymentMetadata: {
+        source: "stripe_checkout",
+        checkoutSessionId: object.id,
+        paymentIntentId: object.payment_intent,
+        customerId: customer.id,
+        amountTotal: object.amount_total,
+        currency: object.currency,
+      }
     });
   }
 }

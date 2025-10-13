@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { type CreditsConfig } from "./credits";
+import {
+  PlanBasedCredits,
+  type CreditsConfig,
+  type OnRegisterCredits,
+} from "./credits";
 
 export const creditTypeSchema = z.enum([
   "image_generation",
@@ -8,7 +12,7 @@ export const creditTypeSchema = z.enum([
 ]);
 
 export const creditsConfig: CreditsConfig = {
-  image_generation: {
+  image_generation: { // Credit type
     name: "Image Generation Credits",
     currency: "USD",
     minimumAmount: 1,
@@ -32,6 +36,28 @@ export const creditsConfig: CreditsConfig = {
       // Else use default rate of 0.01
       console.log({ userPlan });
       return amountOfCredits * 0.01;
+    },
+  },
+};
+
+export const enableCredits = true; // Enable or disable credits
+
+export const onRegisterCredits: OnRegisterCredits = {
+  image_generation: { // Credit type
+    amount: 50,
+    expiryAfter: 30, // Optional, if not provided, credits will never expire
+  },
+};
+
+export const onPlanChangeCredits: PlanBasedCredits = {
+  test: { // Codename of the plan
+    image_generation: { // Credit type
+      amount: 100,
+      expiryAfter: 30, // Optional, if not provided, credits will never expire
+    },
+    video_generation: { // Credit type
+      amount: 100,
+      expiryAfter: 30, // Optional, if not provided, credits will never expire
     },
   },
 };

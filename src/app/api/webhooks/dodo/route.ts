@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { eq, or } from "drizzle-orm";
 import updatePlan from "@/lib/plans/updatePlan";
 import downgradeToDefaultPlan from "@/lib/plans/downgradeToDefaultPlan";
+import { allocatePlanCredits } from "@/lib/credits/allocatePlanCredits";
 import { Webhook } from "standardwebhooks";
 
 class DodoPaymentsWebhookHandler {
@@ -66,6 +67,19 @@ class DodoPaymentsWebhookHandler {
           userId: user.id,
           newPlanId: dbPlan.id,
         });
+
+        // Allocate plan-based credits
+        await allocatePlanCredits(
+          user.id,
+          dbPlan.id,
+          payment.payment_id || `payment_${payment.customer.customer_id}_${Date.now()}`,
+          {
+            source: "dodo_payment",
+            customerId: payment.customer.customer_id,
+            customerEmail: payment.customer.email,
+            productId,
+          }
+        );
       }
     } catch (error) {
       throw error;
@@ -192,6 +206,20 @@ class DodoPaymentsWebhookHandler {
       }
 
       await updatePlan({ userId: user.id, newPlanId: dbPlan.id });
+
+      // Allocate plan-based credits
+      await allocatePlanCredits(
+        user.id,
+        dbPlan.id,
+        subscription.subscription_id,
+        {
+          source: "dodo_subscription",
+          subscriptionId: subscription.subscription_id,
+          customerId: subscription.customer.customer_id,
+          customerEmail: subscription.customer.email,
+          productId,
+        }
+      );
     } catch (error) {
       throw error;
     }
@@ -250,6 +278,18 @@ class DodoPaymentsWebhookHandler {
       }
 
       await updatePlan({ userId: user[0].id, newPlanId: dbPlan.id });
+
+      // Allocate plan-based credits
+      await allocatePlanCredits(
+        user[0].id,
+        dbPlan.id,
+        subscription.subscription_id,
+        {
+          source: "dodo_subscription_renewed",
+          subscriptionId: subscription.subscription_id,
+          productId,
+        }
+      );
     } catch (error) {
       // Handle error
       console.error(error);

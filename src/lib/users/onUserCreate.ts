@@ -6,6 +6,10 @@ import { eq } from "drizzle-orm";
 import { appConfig } from "../config";
 import Welcome from "@/emails/Welcome";
 import sendMail from "../email/sendMail";
+import { enableCredits, onRegisterCredits } from "../credits/config";
+import { type CreditType } from "../credits/credits";
+import { addCredits } from "../credits/recalculate";
+import { addDays } from "date-fns";
 
 const onUserCreate = async (newUser: {
   id: string;
@@ -24,6 +28,27 @@ const onUserCreate = async (newUser: {
       .set({ planId: defaultPlan[0].id })
       .where(eq(users.id, newUser.id));
   }
+
+  if (enableCredits) {
+    // Add welcome credits based on configuration
+    for (const [creditType, config] of Object.entries(onRegisterCredits)) {
+      const expiryDate = config.expiryAfter
+        ? addDays(new Date(), config.expiryAfter)
+        : null;
+
+      await addCredits(
+        newUser.id,
+        creditType as CreditType,
+        config.amount,
+        `welcome_credits_${creditType}_${newUser.id}`,
+        {
+          reason: "Welcome credits",
+        },
+        expiryDate
+      );
+    }
+  }
+
   // TIP: Send welcome email to user
 
   const html = await render(

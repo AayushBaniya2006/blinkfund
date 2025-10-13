@@ -8,6 +8,7 @@ import { paypalContext } from "@/db/schema/paypal";
 import { PAYPAL_BASE_URL, getPaypalAuthToken } from "@/lib/paypal/api";
 import { addCredits } from "@/lib/credits/recalculate";
 import { CreditType } from "@/lib/credits/credits";
+import { allocatePlanCredits } from "@/lib/credits/allocatePlanCredits";
 
 class PayPalWebhookHandler {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,6 +64,18 @@ class PayPalWebhookHandler {
     } else if (context.planId) {
       // Handle plan purchase
       await updatePlan({ userId, newPlanId: context.planId });
+
+      // Allocate plan-based credits
+      await allocatePlanCredits({
+        userId,
+        planId: context.planId,
+        paymentId: orderId,
+        paymentMetadata: {
+          source: "paypal_order",
+          paypalOrderId: orderId,
+          paypalContextId: context.id,
+        }
+      });
     } else {
       console.error("PayPal order completed but no plan or credit information found:", context);
       return;
@@ -80,6 +93,19 @@ class PayPalWebhookHandler {
     const planId = context.planId;
     if (!userId || !planId) return;
     await updatePlan({ userId, newPlanId: planId });
+
+    // Allocate plan-based credits
+    await allocatePlanCredits({
+      userId,
+      planId,
+      paymentId: subscriptionId,
+      paymentMetadata: {
+        source: "paypal_subscription",
+        paypalSubscriptionId: subscriptionId,
+        paypalContextId: context.id,
+      }
+    });
+
     await db.update(paypalContext).set({ status: "success" }).where(eq(paypalContext.id, context.id));
   }
 

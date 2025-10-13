@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { creditTransactions } from "@/db/schema/credits";
+import { CreditTransaction, creditTransactions } from "@/db/schema/credits";
 import { users } from "@/db/schema/user";
 import { eq } from "drizzle-orm";
 import { type CreditType } from "./credits";
@@ -76,14 +76,15 @@ export async function recalculateUserCredits(userId: string): Promise<CreditReco
  * @param amount - Amount of credits (always positive)
  * @param paymentId - Optional payment ID for duplicate prevention
  * @param metadata - Optional metadata
+ * @param expirationDate - Optional expiration date for the credits
  * @returns Promise<CreditRecord> - Updated credit balances
  * 
  * @example
- * // Add 100 image generation credits with payment ID
+ * // Add 100 image generation credits with payment ID and expiration
  * await addCreditTransaction("user123", "image_generation", "credit", 100, "payment_123", {
  *   reason: "Purchase",
  *   orderId: "order_123"
- * });
+ * }, new Date('2024-12-31'));
  * 
  * // Use 5 image generation credits
  * await addCreditTransaction("user123", "image_generation", "debit", 5, null, {
@@ -101,8 +102,8 @@ export async function addCreditTransaction(
   transactionType: "credit" | "debit" | "expired",
   amount: number,
   paymentId?: string | null,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>
+  metadata?: CreditTransaction["metadata"],
+  expirationDate?: Date | null
 ): Promise<CreditRecord> {
   try {
     // Validate amount is positive
@@ -166,6 +167,7 @@ export async function addCreditTransaction(
       amount,
       paymentId,
       metadata,
+      expirationDate,
     });
 
     // Update user's credits
@@ -208,6 +210,7 @@ export async function getUserCredits(userId: string): Promise<CreditRecord> {
  * @param amount - Amount of credits to add
  * @param paymentId - Payment ID for duplicate prevention
  * @param metadata - Optional metadata
+ * @param expirationDate - Optional expiration date for the credits
  * @returns Promise<CreditRecord> - Updated credit balances
  */
 export async function addCredits(
@@ -215,10 +218,10 @@ export async function addCredits(
   creditType: CreditType,
   amount: number,
   paymentId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>
+  metadata?: CreditTransaction["metadata"],
+  expirationDate?: Date | null
 ): Promise<CreditRecord> {
-  return await addCreditTransaction(userId, creditType, "credit", amount, paymentId, metadata);
+  return await addCreditTransaction(userId, creditType, "credit", amount, paymentId, metadata, expirationDate);
 }
 
 /**
@@ -234,8 +237,7 @@ export async function deductCredits(
   userId: string,
   creditType: CreditType,
   amount: number,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>
+  metadata?: CreditTransaction["metadata"]
 ): Promise<CreditRecord> {
   // Check if user has sufficient credits
   const currentCredits = await getUserCredits(userId);

@@ -28,6 +28,23 @@ export type CreditsConfig = {
   };
 };
 
+export type OnRegisterCredits = {
+  [key in CreditType]?: {
+    amount: number;
+    expiryAfter?: number;
+  };
+};
+
+export type PlanBasedCredits = {
+  [key in string]: {
+    // Codename of the plan
+    [key in CreditType]?: {
+      amount: number;
+      expiryAfter?: number;
+    };
+  };
+};
+
 // Define credits type enum
 export type CreditType = z.infer<typeof creditTypeSchema>;
 
