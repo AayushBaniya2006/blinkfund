@@ -23,10 +23,14 @@ export const paypalContext = pgTable("paypal_context", {
     .default(sql`CURRENT_TIMESTAMP`),
   planId: text("plan_id").references(() => plans.id),
   userId: text("user_id").references(() => users.id),
-  frequency: text("frequency").notNull(), // monthly, yearly, onetime
+  frequency: text("frequency").notNull(), // monthly, yearly, onetime, credits
   paypalOrderId: text("paypal_order_id"),
   paypalSubscriptionId: text("paypal_subscription_id"),
   status: text("status").notNull().default("pending"), // 'pending', 'success', 'cancelled'
+  // Credit purchase fields
+  purchaseType: text("purchase_type").notNull().default("plan"), // 'plan', 'credits'
+  creditType: text("credit_type"), // nullable, only for credit purchases
+  creditAmount: text("credit_amount"), // nullable, stored as text to handle large numbers
 });
 
 // Types

@@ -10,18 +10,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, HelpCircle, TicketCheck } from "lucide-react";
+import { ArrowUpRight, HelpCircle, TicketCheck, History, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import useCurrentPlan from "@/lib/users/useCurrentPlan";
 import useUser from "@/lib/users/useUser";
+import useCredits from "@/lib/users/useCredits";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { enableCredits, creditsConfig } from "@/lib/credits/config";
+import { type CreditType } from "@/lib/credits/credits";
 
 export default function BillingSettingsPage() {
   const { currentPlan, isLoading, error } = useCurrentPlan();
   const { user } = useUser();
+  const { credits, isLoading: creditsLoading } = useCredits();
   const router = useRouter();
   // Check if organization has a plan with quotas
   const plan = currentPlan;
@@ -82,6 +86,69 @@ export default function BillingSettingsPage() {
     );
   };
 
+  // Function to render credits section
+  const renderCreditsSection = () => {
+    if (!enableCredits) return null;
+
+    const creditTypes = Object.keys(creditsConfig) as CreditType[];
+    const currentCredits = credits || {};
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Your Credits
+          </CardTitle>
+          <CardDescription>
+            Current credit balances for your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {creditsLoading ? (
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-full" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {creditTypes.map((creditType) => {
+                const balance = currentCredits[creditType] || 0;
+                const config = creditsConfig[creditType];
+
+                return (
+                  <div
+                    key={creditType}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div className="font-medium text-sm">{config.name}</div>
+                    <Badge variant="outline" className="px-3 py-1">
+                      {balance.toLocaleString()}
+                    </Badge>
+                  </div>
+                );
+              })}
+              {creditTypes.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No credit types configured.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" asChild className="w-full">
+            <Link href="/app/credits/history">
+              <History className="mr-2 h-4 w-4" />
+              View Credits History
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
+
   // Since UserOrganizationWithPlan doesn't have customer IDs,
   // we'll just show a contact support message instead
   const customerIdSection = (
@@ -105,7 +172,7 @@ export default function BillingSettingsPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${enableCredits ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Card>
           <CardHeader>
             <CardTitle>Current Plan</CardTitle>
@@ -192,6 +259,8 @@ export default function BillingSettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        {renderCreditsSection()}
       </div>
     </div>
   );

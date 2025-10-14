@@ -158,13 +158,19 @@ async function SubscribePage({
         tax_id_collection: {
           enabled: true,
         },
-        customer_update: user.stripeCustomerId ? user.stripeCustomerId
-          ? {
-              name: "auto",
-              address: "auto",
-            } : undefined
+        customer_update: user.stripeCustomerId
+          ? user.stripeCustomerId
+            ? {
+                name: "auto",
+                address: "auto",
+              }
+            : undefined
           : undefined,
-        customer_creation: user.stripeCustomerId ? undefined : "always",
+        customer_creation: user.stripeCustomerId
+          ? undefined
+          : type === PlanType.ONETIME
+            ? "always"
+            : undefined,
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/subscribe/success?provider=${provider}&codename=${codename}&type=${type}&sessionId={CHECKOUT_SESSION_ID}&trialPeriodDays=${trialPeriodDays}`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/subscribe/cancel?provider=${provider}&codename=${codename}&type=${type}&sessionId={CHECKOUT_SESSION_ID}&trialPeriodDays=${trialPeriodDays}`,
       });

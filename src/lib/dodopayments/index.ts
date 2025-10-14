@@ -1,3 +1,5 @@
+import { creditsConfig } from "../credits/config";
+import { CreditType } from "../credits/credits";
 import client from "./client";
 import { countries } from "countries-list";
 interface CreateCheckoutSessionResponse {
@@ -60,6 +62,76 @@ export const createOneTimePaymentCheckout = async (params: {
     };
   } catch (error) {
     console.error("Error creating DodoPayments one-time payment:", error);
+    throw error;
+  }
+};
+
+export const createCreditCheckout = async (params: {
+  productId: string;
+  customerEmail: string;
+  customerId?: string;
+  billing: BillingInfo;
+  taxId?: string;
+  creditAmount: number;
+  creditType: string;
+  userId: string;
+  totalPrice: number;
+}): Promise<CreateCheckoutSessionResponse> => {
+  const {
+    productId,
+    customerEmail,
+    customerId,
+    billing,
+    taxId,
+    creditAmount,
+    creditType,
+    userId,
+    totalPrice,
+  } = params;
+
+  try {
+    // If there's a customerId, use it, otherwise create a new customer
+    const customer = customerId
+      ? { customer_id: customerId }
+      : {
+          name: customerEmail.split("@")[0], // Simple name extraction from email
+          email: customerEmail,
+          create_new_customer: true,
+        };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const productCartItem: any = {
+      product_id: productId,
+      quantity: 1, // Always 1 for credit purchases, actual amount is in metadata
+      amount: Math.round(totalPrice * 100), // Convert to cents
+    };
+
+    const response = await client.payments.create({
+      product_cart: [productCartItem],
+      customer,
+      // @ts-expect-error - DodoPayments types are not updated
+      billing: billing,
+      payment_link: true,
+      tax_id: taxId,
+      // @ts-expect-error - DodoPayments types are not updated
+      billing_currency: creditsConfig[creditType as CreditType].currency,
+      metadata: {
+        purchaseType: "credits",
+        creditType: creditType,
+        creditAmount: creditAmount.toString(),
+        userId: userId,
+        totalPrice: totalPrice.toString(),
+      },
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/credits/buy/success?provider=dodo&creditType=${creditType}&amount=${creditAmount}`,
+    });
+
+    return {
+      payment_link: response.payment_link || "",
+      client_secret: response.client_secret,
+      payment_id: response.payment_id,
+    };
+  } catch (error) {
+    console.error("Error creating DodoPayments credit checkout:", error);
     throw error;
   }
 };

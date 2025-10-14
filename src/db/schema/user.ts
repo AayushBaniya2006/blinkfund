@@ -5,10 +5,17 @@ import {
   text,
   primaryKey,
   integer,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 import type { AdapterAccountType } from "next-auth/adapters";
 import { plans } from "./plans";
+
+import { type CreditType } from "@/lib/credits/credits";
+
+type CreditRecord = {
+  [K in CreditType]?: number;
+};
 
 export const users = pgTable("app_user", {
   id: text("id")
@@ -21,13 +28,15 @@ export const users = pgTable("app_user", {
   password: text("password"), // Hashed password for credential-based auth
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow(),
 
+  credits: jsonb("credits").$type<CreditRecord>().default({}),
+
   stripeCustomerId: text("stripeCustomerId"),
   stripeSubscriptionId: text("stripeSubscriptionId"),
   lemonSqueezyCustomerId: text("lemonSqueezyCustomerId"),
   lemonSqueezySubscriptionId: text("lemonSqueezySubscriptionId"),
   dodoCustomerId: text("dodoCustomerId"),
   dodoSubscriptionId: text("dodoSubscriptionId"),
-  
+
   planId: text("planId").references(() => plans.id),
 });
 

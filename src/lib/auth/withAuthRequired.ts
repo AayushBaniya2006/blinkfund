@@ -94,6 +94,7 @@ const withAuthRequired = (handler: WithManagerHandler) => {
           dodoCustomerId: users.dodoCustomerId,
           dodoSubscriptionId: users.dodoSubscriptionId,
           emailVerified: users.emailVerified,
+          credits: users.credits,
         })
         .from(users)
         .where(eq(users.id, userId))
