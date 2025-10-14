@@ -70,7 +70,7 @@ export default function CreditsErrorRedirector() {
 
           <div className="flex flex-col sm:flex-row gap-2 items-center w-full">
             <Button asChild className="w-full sm:w-auto">
-              <Link href="/app/credits">Try Again</Link>
+              <Link href="/#credits">Try Again</Link>
             </Button>
             <Button variant="outline" asChild className="w-full sm:w-auto">
               <Link href="/contact">Contact Support</Link>

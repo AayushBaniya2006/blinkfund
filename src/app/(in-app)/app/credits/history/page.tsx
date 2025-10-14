@@ -183,7 +183,7 @@ export default async function CreditsHistoryPage() {
                 first purchase or use credits.
               </p>
               <Button asChild>
-                <Link href="/app/credits">
+                <Link href="/#credits">
                   <Plus className="mr-2 h-4 w-4" />
                   Buy Credits
                 </Link>

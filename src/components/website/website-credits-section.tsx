@@ -13,7 +13,15 @@ import { BorderBeam } from "@/components/ui/border-beam";
 import { type CreditType } from "@/lib/credits/credits";
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
 import useBuyCredits from "@/lib/credits/useBuyCredits";
-import { Coins, Zap, Crown, Image, Video, LucideIcon, Loader2 } from "lucide-react";
+import {
+  Coins,
+  Zap,
+  Crown,
+  Image,
+  Video,
+  LucideIcon,
+  Loader2,
+} from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -52,7 +60,7 @@ const CreditPackageCard = ({
   selectedProvider,
 }: {
   creditType: CreditType;
-  pkg: typeof creditPackages[0];
+  pkg: (typeof creditPackages)[0];
   selectedProvider: PlanProvider;
 }) => {
   const { price, isLoading, error, getBuyCreditsUrl } = useBuyCredits(
@@ -61,7 +69,8 @@ const CreditPackageCard = ({
   );
 
   const PackageIcon = pkg.icon;
-  const pricePerCredit = price && price > 0 ? (price / pkg.credits).toFixed(4) : "0";
+  const pricePerCredit =
+    price && price > 0 ? (price / pkg.credits).toFixed(4) : "0";
 
   const handleBuyCredits = () => {
     const url = getBuyCreditsUrl(selectedProvider);
@@ -86,21 +95,23 @@ const CreditPackageCard = ({
         </div>
 
         <CardTitle className="text-lg">{pkg.name}</CardTitle>
-        <CardDescription className="text-sm">
-          {pkg.description}
-        </CardDescription>
+        <CardDescription className="text-sm">{pkg.description}</CardDescription>
 
         <div className="mt-4">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-muted-foreground">Loading price...</span>
+              <span className="text-sm text-muted-foreground">
+                Loading price...
+              </span>
             </div>
           ) : error ? (
             <div className="text-sm text-destructive">Price unavailable</div>
           ) : (
             <>
-              <div className="text-2xl font-bold">${price?.toFixed(2) || "0.00"}</div>
+              <div className="text-2xl font-bold">
+                ${price?.toFixed(2) || "0.00"}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {pkg.credits} credits • ${pricePerCredit}/credit
               </div>
@@ -130,7 +141,7 @@ const CreditPackageCard = ({
 };
 
 export default function WebsiteCreditsSection() {
-  const [selectedProvider] = useState<PlanProvider>(PlanProvider.DODO);
+  const [selectedProvider] = useState<PlanProvider>(PlanProvider.STRIPE);
 
   const CreditTypeSection = ({
     creditType,
@@ -166,7 +177,10 @@ export default function WebsiteCreditsSection() {
   );
 
   return (
-    <section className="py-16 bg-gradient-to-b from-background to-muted/20">
+    <section
+      className="py-16 bg-gradient-to-b from-background to-muted/20"
+      id="credits"
+    >
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
