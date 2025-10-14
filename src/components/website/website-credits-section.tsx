@@ -10,14 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BorderBeam } from "@/components/ui/border-beam";
-import {
-  getCreditsBuyUrl,
-  getCreditsPrice,
-  type CreditType,
-} from "@/lib/credits/credits";
+import { type CreditType } from "@/lib/credits/credits";
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
-import useCurrentPlan from "@/lib/users/useCurrentPlan";
-import { Coins, Zap, Crown, Image, Video, LucideIcon } from "lucide-react";
+import useBuyCredits from "@/lib/credits/useBuyCredits";
+import { Coins, Zap, Crown, Image, Video, LucideIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -49,37 +45,92 @@ const creditPackages = [
   },
 ];
 
-export default function WebsiteCreditsSection() {
-  const { currentPlan } = useCurrentPlan();
-  const [selectedProvider] = useState<PlanProvider>(PlanProvider.DODO);
+// Credit Package Card Component using useBuyCredits hook
+const CreditPackageCard = ({
+  creditType,
+  pkg,
+  selectedProvider,
+}: {
+  creditType: CreditType;
+  pkg: typeof creditPackages[0];
+  selectedProvider: PlanProvider;
+}) => {
+  const { price, isLoading, error, getBuyCreditsUrl } = useBuyCredits(
+    creditType,
+    pkg.credits
+  );
 
-  const getPackagePrice = (creditType: CreditType, credits: number) => {
-    try {
-      // Pass user's current plan for personalized pricing, fallback to base price for non-authenticated users
-      const validCurrentPlan =
-        currentPlan && currentPlan.codename && currentPlan.quotas
-          ? {
-              id: currentPlan.id,
-              codename: currentPlan.codename,
-              quotas: currentPlan.quotas,
-            }
-          : undefined;
+  const PackageIcon = pkg.icon;
+  const pricePerCredit = price && price > 0 ? (price / pkg.credits).toFixed(4) : "0";
 
-      return getCreditsPrice(creditType, credits, validCurrentPlan);
-    } catch (error) {
-      console.error("Error calculating price:", error);
-      return 0;
-    }
-  };
-
-  const handleBuyCredits = (creditType: CreditType, credits: number) => {
-    const url = getCreditsBuyUrl({
-      creditType,
-      amount: credits,
-      provider: selectedProvider,
-    });
+  const handleBuyCredits = () => {
+    const url = getBuyCreditsUrl(selectedProvider);
     window.location.href = url;
   };
+
+  return (
+    <Card
+      className={`relative ${pkg.popular ? "border-primary shadow-lg scale-105" : ""}`}
+    >
+      {pkg.popular && <BorderBeam size={250} duration={12} delay={9} />}
+
+      <CardHeader className="text-center">
+        {pkg.popular && (
+          <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+            Most Popular
+          </Badge>
+        )}
+
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <PackageIcon className="h-6 w-6 text-primary" />
+        </div>
+
+        <CardTitle className="text-lg">{pkg.name}</CardTitle>
+        <CardDescription className="text-sm">
+          {pkg.description}
+        </CardDescription>
+
+        <div className="mt-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">Loading price...</span>
+            </div>
+          ) : error ? (
+            <div className="text-sm text-destructive">Price unavailable</div>
+          ) : (
+            <>
+              <div className="text-2xl font-bold">${price?.toFixed(2) || "0.00"}</div>
+              <div className="text-xs text-muted-foreground">
+                {pkg.credits} credits • ${pricePerCredit}/credit
+              </div>
+            </>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <Button
+          className="w-full"
+          onClick={handleBuyCredits}
+          disabled={isLoading || error !== undefined || !price || price === 0}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            `Buy ${pkg.credits} Credits`
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default function WebsiteCreditsSection() {
+  const [selectedProvider] = useState<PlanProvider>(PlanProvider.DODO);
 
   const CreditTypeSection = ({
     creditType,
@@ -92,7 +143,7 @@ export default function WebsiteCreditsSection() {
     description: string;
     icon: LucideIcon;
   }) => (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Icon className="h-8 w-8 text-primary" />
@@ -102,55 +153,14 @@ export default function WebsiteCreditsSection() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {creditPackages.map((pkg) => {
-          const PackageIcon = pkg.icon;
-          const price = getPackagePrice(creditType, pkg.credits);
-          const pricePerCredit =
-            price > 0 ? (price / pkg.credits).toFixed(4) : "0";
-
-          return (
-            <Card
-              key={`${creditType}-${pkg.id}`}
-              className={`relative ${pkg.popular ? "border-primary shadow-lg scale-105" : ""}`}
-            >
-              {pkg.popular && <BorderBeam size={250} duration={12} delay={9} />}
-
-              <CardHeader className="text-center">
-                {pkg.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    Most Popular
-                  </Badge>
-                )}
-
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <PackageIcon className="h-6 w-6 text-primary" />
-                </div>
-
-                <CardTitle className="text-lg">{pkg.name}</CardTitle>
-                <CardDescription className="text-sm">
-                  {pkg.description}
-                </CardDescription>
-
-                <div className="mt-4">
-                  <div className="text-2xl font-bold">${price.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {pkg.credits} credits • ${pricePerCredit}/credit
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <Button
-                  className="w-full"
-                  onClick={() => handleBuyCredits(creditType, pkg.credits)}
-                  disabled={price === 0}
-                >
-                  Buy {pkg.credits} Credits
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {creditPackages.map((pkg) => (
+          <CreditPackageCard
+            key={`${creditType}-${pkg.id}`}
+            creditType={creditType}
+            pkg={pkg}
+            selectedProvider={selectedProvider}
+          />
+        ))}
       </div>
     </div>
   );
@@ -210,11 +220,9 @@ export default function WebsiteCreditsSection() {
             Secure payments powered by Stripe • No monthly commitments • Instant
             activation
           </p>
-          {currentPlan && currentPlan.codename && currentPlan.quotas && (
-            <p className="text-sm text-primary mt-2 font-medium">
-              ✨ Personalized pricing based on your {currentPlan.codename} plan
-            </p>
-          )}
+          <p className="text-sm text-primary mt-2 font-medium">
+            ✨ Personalized pricing based on your subscription plan
+          </p>
         </div>
       </div>
     </section>
