@@ -32,17 +32,6 @@ const useBuyCredits = (
       };
     }
 
-    // If there's an error fetching plan data, return error
-    if (error) {
-      return {
-        price: undefined,
-        currency: undefined,
-        isLoading: false,
-        error,
-        getBuyCreditsUrl: () => "",
-      };
-    }
-
     try {
       // Pass user's current plan for personalized pricing, fallback to base price for non-authenticated users
       const validCurrentPlan =

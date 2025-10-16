@@ -30,13 +30,13 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isAPI) {
-    if(!isAuth) {
-      return NextResponse.json({error: "Unauthorized"}, {status: 401})
+    if (!isAuth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.next();
   }
 
-  if (!isAuth) {
+  if (!isAuth && req.nextUrl.pathname.startsWith("/app")) {
     let callbackUrl = req.nextUrl.pathname;
     if (req.nextUrl.search) {
       callbackUrl += req.nextUrl.search;
