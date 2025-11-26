@@ -1,6 +1,8 @@
 ---
 name: auth-handler
 description: Manage authentication, authorization, and user sessions. Use when dealing with login, sign-up, API protection, middleware, or user data fetching.
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # Auth Handler
