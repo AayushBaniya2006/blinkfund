@@ -1,5 +1,8 @@
 ---
+name: seo-handler
 description: Manage SEO, sitemaps, and metadata for optimal search engine visibility
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # SEO Handler Skill

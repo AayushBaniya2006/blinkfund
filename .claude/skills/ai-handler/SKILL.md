@@ -1,4 +1,5 @@
 ---
+name: ai-handler
 description: Integrate Replicate AI models with background processing, S3 storage, and credit systems
 ---
 

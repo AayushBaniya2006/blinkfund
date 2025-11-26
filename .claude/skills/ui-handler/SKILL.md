@@ -1,6 +1,8 @@
 ---
 name: ui-handler
 description: Implement UI using Shadcn, Tailwind, and React components. Use when adding buttons, inputs, layouts, or styling.
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # UI Handler

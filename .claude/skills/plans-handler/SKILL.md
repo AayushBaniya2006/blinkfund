@@ -1,6 +1,8 @@
 ---
 name: plans-handler
 description: Manage subscription plans, pricing, and quotas. Use when adding plan features, updating limits, or building pricing pages.
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # Plans Handler

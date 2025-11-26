@@ -1,5 +1,8 @@
 ---
+name: s3-upload-handler
 description: Handle S3 file uploads including UI components, client-side logic, and server-side processing
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # S3 Upload Handler Skill

@@ -1,4 +1,5 @@
 ---
+name: blog-creator
 description: Create SEO-optimized MDX blog posts with proper frontmatter
 ---
 

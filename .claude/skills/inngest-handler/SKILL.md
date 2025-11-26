@@ -1,5 +1,8 @@
 ---
+name: inngest-handler
 description: Create and register Inngest functions for background jobs, workflows, and scheduled tasks
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # Inngest Function Handler Skill

@@ -1,6 +1,8 @@
 ---
 name: db-handler
 description: Manage database schemas, Drizzle ORM, migrations, and data modeling. Use when creating tables, modifying columns, or planning database changes.
+tools: Read, Write, Edit
+model: inherit
 ---
 
 # Database Handler
