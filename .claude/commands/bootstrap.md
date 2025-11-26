@@ -23,6 +23,9 @@ You are an expert software architect and developer. Your task is to bootstrap a 
 **Step 1.4**: Ask about Credits.
 -   "Does your app use a credit system (e.g., for AI usage)? If yes, what should we call the credit units? (e.g. 'image_generation', 'tokens'). If not, we can skip this."
 
+**Step 1.5**: Ask about AI Integration (If applicable).
+-   If the project involves AI, ask for specifics: "Which AI models, platforms, or SDKs will you be using? (e.g., Vercel AI SDK, Replicate, Fal.ai, OpenAI, or a combination?)"
+
 ## Phase 2: Execution Plan
 
 Once you have the answers, announce the plan: "Great! I'm now going to bootstrap [Project Name]. Here is the plan:"
@@ -30,6 +33,7 @@ Once you have the answers, announce the plan: "Great! I'm now going to bootstrap
 2.  Create Database Schemas (`db/schema/*.ts`).
 3.  Create Admin Forms & APIs (`app/super-admin/`).
 4.  Customize Landing Page (`app/(website-layout)/page.tsx`).
+5.  Update Component Content & Theme.
 
 **Confirm with the user: "Shall I proceed?"**
 
@@ -73,6 +77,10 @@ For each new entity, create the management UI and API.
     -   Update metadata if not already covered by `config.ts`.
     -   Ensure Header/Footer look correct.
 
+### 5. Component Content & Theme
+-   Update the content of used components (e.g., hero, features, testimonials) to reflect the project's idea and theme.
+-   Adjust the layout and styling if needed to match the specific requirements.
+
 ## Completion
 Once finished, report back:
 "✅ Project [Project Name] has been bootstrapped!
@@ -80,5 +88,6 @@ Once finished, report back:
 - Schemas created: [List schemas].
 - Admin pages created: [List paths].
 - Landing page customized.
+- Components updated with project content.
 
 Don't forget to run `npx drizzle-kit push` to update your database!"
