@@ -60,7 +60,7 @@ After confirmation, execute the following changes. **Do not ask for permission f
 
 ### 2. Theme Installation
 -   Install the selected theme using the `theme-handler` logic.
--   Run the appropriate command: `pnpm dlx shadcn@latest add <theme-url>` (Refer to `theme-handler` skill for URLs).
+-   Run the appropriate command: `pnpm dlx shadcn@latest add <theme-url>` (Refer to `theme-handler` skill for URLs). also give url https://tweakcn.com/editor/theme to choose theme name from dropdown.
 
 ### 3. Database Schema
 -   For each entity identified in Step 1.4, create a file `src/db/schema/[entity-name].ts`.
@@ -81,13 +81,16 @@ For each entity requiring user management:
     -   `page.tsx` (List View)
     -   `create/page.tsx` (Create Form)
     -   `[id]/page.tsx` (Detail/Edit)
+    -    use useCredits or useCurrentPlan or useUser to get the user data based on the entity required on client side components.
 -   **API Routes**: `src/app/api/app/[entity-plural]/...`
     -   Ensure all queries are scoped to `req.auth.user.id`.
+    -   use withAuthRequired in API routes
 
 ### 6. Landing Page & Layout
 -   **`src/app/(website-layout)/page.tsx`**:
     -   Replace content with a compelling landing page.
     -   Update layout and internal components as needed to look good.
+    -   If user opted for credits then use useBuyCredits to customise website-credits-section.
 -   **`src/app/(website-layout)/layout.tsx`**:
     -   Update metadata and structure.
 
