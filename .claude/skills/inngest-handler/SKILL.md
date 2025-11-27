@@ -51,7 +51,7 @@ export const processOrder = inngest.createFunction(
       match: "data.orderId",
       timeout: "24h"
     });
-    
+
     // 4. Step: Conditional Logic
     if (!payment) {
         await step.run("cancel-order", async () => { ... });
@@ -79,7 +79,7 @@ for (const item of items) {
   // Use dynamic ID to ensure uniqueness per item
   await step.run(`process-item-${item.id}`, async () => {
     await processItem(item);
-  });
+    });
 }
 ```
 
