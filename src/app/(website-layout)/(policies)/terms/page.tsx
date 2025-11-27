@@ -66,8 +66,8 @@ export default async function TermsPage() {
           name: "Terms of Service",
         }}
       />
-      <header className="mb-8 space-y-4">
-        <h1 className="text-4xl font-bold">{policy.frontmatter.title}</h1>
+      <header className="mb-12 space-y-4 text-center">
+        <h1 className="text-4xl font-semibold md:text-5xl">{policy.frontmatter.title}</h1>
         <p className="text-sm text-muted-foreground">
           Last updated: {format(new Date(policy.frontmatter.lastUpdated), "MMMM d, yyyy")}
         </p>

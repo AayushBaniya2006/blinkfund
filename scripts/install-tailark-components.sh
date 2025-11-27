@@ -40,3 +40,4 @@ done
 
 echo "✅ All Tailark components installed successfully!"
 
+

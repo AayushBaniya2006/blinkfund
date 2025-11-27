@@ -1,30 +1,30 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useState } from "react";
-
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import Link from "next/link";
 
 const MonthlyAnnualPricing = () => {
   const [isAnnually, setIsAnnually] = useState(false);
+
   return (
-    <section className="py-32">
-      <div className="container">
-        <div className="mx-auto mb-20 max-w-(--breakpoint-md) text-center">
+    <div className="relative py-16 md:py-32">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-primary font-medium mb-4">Special Launch Offer</p>
-          <h2 className="mb-4 text-4xl tracking-tight font-bold lg:text-5xl">
-            Simple, Transparent Pricing
+          <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl">
+            Start managing your company smarter today
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="mt-4 text-muted-foreground text-lg">
             Choose the perfect plan for your needs. No hidden fees.
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-base font-medium">Billing cycle</span>
+        <div className="mt-8 flex justify-center">
           <div className="flex h-12 items-center rounded-md bg-muted p-1 text-lg">
             <RadioGroup
               defaultValue="monthly"
@@ -33,7 +33,7 @@ const MonthlyAnnualPricing = () => {
                 setIsAnnually(value === "annually");
               }}
             >
-              <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-white'>
+              <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-white dark:has-[button[data-state="checked"]]:bg-zinc-900'>
                 <RadioGroupItem
                   value="monthly"
                   id="monthly"
@@ -46,7 +46,7 @@ const MonthlyAnnualPricing = () => {
                   Monthly
                 </Label>
               </div>
-              <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-white'>
+              <div className='h-full rounded-md transition-all has-[button[data-state="checked"]]:bg-white dark:has-[button[data-state="checked"]]:bg-zinc-900'>
                 <RadioGroupItem
                   value="annually"
                   id="annually"
@@ -59,7 +59,7 @@ const MonthlyAnnualPricing = () => {
                   Yearly
                   <Badge
                     variant="outline"
-                    className="border-green-200 bg-green-100 px-1.5 text-green-600"
+                    className="border-green-200 bg-green-100 px-1.5 text-green-600 dark:bg-green-900/20 dark:border-green-900"
                   >
                     -20%
                   </Badge>
@@ -67,100 +67,94 @@ const MonthlyAnnualPricing = () => {
               </div>
             </RadioGroup>
           </div>
-          <div className="mt-12 grid max-w-(--breakpoint-md) gap-8 md:grid-cols-2">
-            <div className="rounded-xl border border-2 border-gray-400 p-8 hover:border-primary transition-colors">
-              <div className="flex h-full flex-col justify-between gap-6">
-                <div>
-                  <h3 className="mb-4 text-2xl font-bold">Basic Plan</h3>
-                  <div className="mb-6">
-                    <span className="text-5xl font-bold">
-                      {isAnnually ? "$63" : "$79"}
-                    </span>
-                    <span className="ml-2 font-medium text-muted-foreground">
-                      per month
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground font-medium">
-                    Good for small teams, or small businesses just starting out.
-                  </p>
-                  <p className="mb-4 mt-8 font-bold text-lg">Includes</p>
-                  <ul className="flex flex-col gap-4">
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">5 projects limit</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">5GB storage</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">Up to 3 users</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">Support by email only</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">
-                        No time tracking feature
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-                <Button size="lg" className="mt-8">
-                  Start a free trial
-                </Button>
-              </div>
+        </div>
+
+        <div className="mt-8 md:mt-20 grid gap-8 md:grid-cols-2">
+          {/* Basic Plan */}
+          <div className="bg-card relative rounded-3xl border shadow-2xl shadow-zinc-950/5 flex flex-col p-8 md:p-10">
+            <div className="mb-8">
+              <h3 className="text-2xl font-semibold">Basic Plan</h3>
+              <p className="mt-2 text-muted-foreground">
+                For small teams just starting out
+              </p>
+              <span className="mt-8 inline-block text-6xl font-bold">
+                <span className="text-4xl">$</span>
+                {isAnnually ? "63" : "79"}
+              </span>
+              <span className="ml-2 text-muted-foreground">/mo</span>
             </div>
-            <div className="rounded-xl border border-gray-400 border-2 p-8 hover:border-primary transition-colors">
-              <div className="flex h-full flex-col justify-between gap-6">
-                <div>
-                  <h3 className="mb-4 text-2xl font-bold">Pro Plan</h3>
-                  <div className="mb-6">
-                    <span className="text-5xl font-bold">
-                      {isAnnually ? "$239" : "$299"}
-                    </span>
-                    <span className="ml-2 font-medium text-muted-foreground">
-                      per month
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground font-medium">
-                    Good for medium to large businesses. Get all the features
-                    you need.
-                  </p>
-                  <p className="mb-4 mt-8 font-bold text-lg">
-                    Everything in Basic, plus
-                  </p>
-                  <ul className="flex flex-col gap-4">
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">Unlimited projects</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">50GB storage</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">Unlimited users</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <Check className="mt-1 size-5 shrink-0 text-primary" />
-                      <span className="font-medium">Priority support</span>
-                    </li>
-                  </ul>
-                </div>
-                <Button size="lg" className="mt-8">
-                  Start a free trial
-                </Button>
-              </div>
+
+            <div className="flex-1">
+              <ul role="list" className="space-y-4">
+                {[
+                  "5 projects limit",
+                  "5GB storage",
+                  "Up to 3 users",
+                  "Support by email only",
+                ].map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <Check className="size-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+                <li className="flex items-center gap-2 text-muted-foreground/50">
+                  <Check className="size-4" />
+                  <span className="text-sm line-through">Time tracking</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-8">
+              <Button asChild size="lg" className="w-full" variant="outline">
+                <Link href="#">Start free trial</Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Pro Plan */}
+          <div className="bg-card relative rounded-3xl border shadow-2xl shadow-zinc-950/5 flex flex-col p-8 md:p-10 ring-1 ring-primary/10">
+            <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+              Most Popular
+            </div>
+            <div className="mb-8">
+              <h3 className="text-2xl font-semibold">Pro Plan</h3>
+              <p className="mt-2 text-muted-foreground">
+                For growing businesses needing power
+              </p>
+              <span className="mt-8 inline-block text-6xl font-bold">
+                <span className="text-4xl">$</span>
+                {isAnnually ? "239" : "299"}
+              </span>
+              <span className="ml-2 text-muted-foreground">/mo</span>
+            </div>
+
+            <div className="flex-1">
+              <ul role="list" className="space-y-4">
+                {[
+                  "Unlimited projects",
+                  "50GB storage",
+                  "Unlimited users",
+                  "Priority support",
+                  "Time tracking",
+                  "Advanced analytics",
+                ].map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <Check className="size-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-8">
+              <Button asChild size="lg" className="w-full">
+                <Link href="#">Get started</Link>
+              </Button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

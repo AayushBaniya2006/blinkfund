@@ -93,15 +93,11 @@ export default function ContactPage() {
         }}
       />
       {/* Hero Section */}
-      <section className="relative w-full overflow-hidden bg-linear-to-br from-primary via-primary/90 to-primary py-20 text-primary-foreground">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff33_1px,transparent_1px),linear-gradient(to_bottom,#ffffff33_1px,transparent_1px)] bg-size-[14px_14px]" />
-          <div className="absolute inset-0 bg-linear-to-br from-primary/50 via-transparent to-primary/50" />
-        </div>
-        <div className="container relative mx-auto px-4">
+      <section className="relative w-full overflow-hidden bg-muted/50 py-16 md:py-24">
+        <div className="container relative mx-auto px-6">
           <div className="mx-auto max-w-2xl space-y-4 text-center">
-            <h1 className="text-3xl font-bold md:text-5xl">Get in Touch</h1>
-            <p className="text-xl text-primary-foreground/90">
+            <h1 className="text-4xl font-semibold md:text-5xl lg:text-6xl">Get in Touch</h1>
+            <p className="text-xl text-muted-foreground">
               Have questions? We&apos;d love to hear from you. Send us a message
               and we&apos;ll respond as soon as possible.
             </p>
@@ -110,14 +106,14 @@ export default function ContactPage() {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto grid max-w-6xl gap-16 md:grid-cols-2">
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-6">
+          <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2 md:gap-16">
             {/* Contact Information */}
-            <div className="space-y-12">
+            <div className="space-y-10">
               <div>
-                <h2 className="mb-6 text-2xl font-bold">Contact Information</h2>
-                <p className="mb-8 text-muted-foreground">
+                <h2 className="mb-4 text-3xl font-semibold">Contact Information</h2>
+                <p className="text-lg text-muted-foreground">
                   Fill up the form and our Team will get back to you within 24
                   hours.
                 </p>
@@ -148,12 +144,12 @@ export default function ContactPage() {
                 ].map((item, i) => (
                   <div key={i} className="flex gap-4">
                     <div className="shrink-0">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                        <item.icon className="h-6 w-6 text-primary" />
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                        <item.icon className="h-6 w-6 text-foreground" />
                       </div>
                     </div>
                     <div>
-                      <h3 className="mb-1 text-lg font-semibold">
+                      <h3 className="mb-2 text-lg font-semibold">
                         {item.title}
                       </h3>
                       {item.details.map((detail, j) => (
@@ -168,8 +164,8 @@ export default function ContactPage() {
             </div>
 
             {/* Contact Form */}
-            <div className="rounded-2xl border bg-card p-8 shadow-lg">
-              <h2 className="mb-6 text-2xl font-bold">Send us a Message</h2>
+            <div className="rounded-2xl border bg-card p-8 md:p-10 shadow-sm">
+              <h2 className="mb-8 text-2xl font-semibold">Send us a Message</h2>
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}

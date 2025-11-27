@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function JoinWaitlistPage() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden relative">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden relative py-16 md:py-32">
       <AnimatedGridPattern
         numSquares={30}
         maxOpacity={0.1}
@@ -58,12 +58,12 @@ export default function JoinWaitlistPage() {
           url: process.env.NEXT_PUBLIC_APP_URL,
         }}
       />
-      <div className="container max-w-md px-4 py-16 z-50">
+      <div className="container max-w-md px-6 z-50">
         <div className="bg-background">
-          <div className="rounded-3xl bg-muted/40 p-8 shadow-xs ring-1 ring-border/60">
+          <div className="rounded-2xl bg-card border p-8 md:p-10 shadow-sm">
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold">Join Our Waitlist</h1>
-              <p className="text-muted-foreground">
+              <h1 className="mb-4 text-3xl font-semibold md:text-4xl">Join Our Waitlist</h1>
+              <p className="text-lg text-muted-foreground">
                 Be among the first to experience our platform when we launch.
               </p>
             </div>

@@ -17,7 +17,7 @@ export default function LoginPage() {
                             aria-label="go home">
                             <LogoIcon />
                         </Link>
-                        <h1 className="mb-1 mt-4 text-xl font-semibold">Sign In to Tailark</h1>
+                        <h1 className="mb-1 mt-4 text-xl font-semibold">Sign In to Indie Kit</h1>
                         <p>Welcome back! Sign in to continue</p>
                     </div>
 
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-accent-foreground text-center text-sm">
-                    Don't have an account ?
+                    Don&apos;t have an account ?
                     <Button
                         asChild
                         variant="link"
