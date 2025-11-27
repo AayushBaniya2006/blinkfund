@@ -1,167 +1,163 @@
 ---
 name: inngest-handler
-description: Create and register Inngest functions for background jobs, workflows, and scheduled tasks
-tools: Read, Write, Edit
-model: inherit
+description: Create and manage Inngest functions for reliable background jobs, workflows, and scheduled tasks.
 ---
 
 # Inngest Function Handler Skill
 
-This skill helps you create typesafe Inngest functions with proper folder structure and registration.
+This skill defines the standards for building durable, multi-step workflows using Inngest.
 
-## Core Principles
+## 🚨 HARD RULES (Strictly Follow)
 
-1.  **Folder Structure**: Derived from event names (e.g., `user.created` -> `src/lib/inngest/functions/user/created/sendWelcomeEmail.ts`).
-2.  **Type Safety**: Always register events in `src/lib/inngest/functions/index.ts`.
-3.  **Multi-Step**: Use `step.run`, `step.sleep`, `step.waitForEvent` for reliable execution.
+1.  **NO `setTimeout` / `setInterval`**:
+    -   ❌ **Bad**: `await new Promise(r => setTimeout(r, 1000))`
+    -   ✅ **Good**: `await step.sleep("wait-1s", "1s")`
+    -   *Reason*: Serverless functions time out; Inngest sleeps persist for up to a year.
 
-## Usage
+2.  **NO Side Effects Outside Steps**:
+    -   Any database write, API call, or non-deterministic logic (random, date) **MUST** be wrapped in `step.run()`.
+    -   *Reason*: Inngest functions execute multiple times (memoization). Code outside steps runs every time.
 
-### 1. Create a New Function
+3.  **Deterministic Steps**:
+    -   Steps are memoized by their ID (1st arg). IDs must be unique and stable.
+    -   Do not dynamically generate step IDs unless you know what you are doing (e.g., inside loops with index).
 
-When creating a function, you must:
-1.  Identify the event name (e.g., `app/invoice.created`) or Cron schedule.
-2.  Create the folder path: `src/lib/inngest/functions/app/invoice/created/`.
-3.  Create the handler file: `generatePdf.ts`.
-4.  Register the event type in `index.ts` (skip for Cron).
-5.  Register the function in the `functions` array in `index.ts`.
+4.  **Return Data from Steps**:
+    -   If you need a value later, return it from the step.
+    -   ❌ **Bad**: `let userId; await step.run(..., () => { userId = ... })`
+    -   ✅ **Good**: `const userId = await step.run(..., () => { return ... })`
 
-### 2. Event-Based Function Template
+## Core Patterns
+
+### 1. Multi-Step Execution
+Wrap all logic in steps to ensure retriability and resumability.
 
 ```typescript
-import { inngest } from "@/lib/inngest/client";
-
-export const yourFunctionName = inngest.createFunction(
-  { 
-    id: "unique-function-id", // e.g., "invoice-generate-pdf"
-    // Concurrency: Run max 2 of these at a time per user
-    concurrency: { limit: 2, key: "event.data.userId" },
-    // Rate Limit: Max 10 per minute
-    rateLimit: { limit: 10, period: "1m", key: "event.data.userId" },
-    // Cancel this function if the invoice is cancelled
-    cancelOn: [{ event: "app/invoice.cancelled", match: "data.invoiceId" }]
-  },
-  { event: "app/invoice.created" },
+export const processOrder = inngest.createFunction(
+  { id: "process-order" },
+  { event: "shop/order.created" },
   async ({ event, step }) => {
-    // 1. Standard Step: reliable execution with auto-retries
-    const data = await step.run("fetch-data", async () => {
-      const result = await db.query(...);
-      if (!result) throw new Error("No data found"); // Will retry automatically
-      return result;
+    // 1. Step: Validate (Retriable)
+    const user = await step.run("get-user", async () => {
+      return await db.users.findById(event.data.userId);
     });
 
-    // 2. Sleep: Pause execution for a duration
-    await step.sleep("wait-for-processing", "10s");
+    // 2. Step: Sleep (Durable pause)
+    await step.sleep("wait-for-payment", "1h");
 
-    // 3. Wait for Event: Pause until another event occurs (or timeout)
-    const payment = await step.waitForEvent("wait-for-payment", {
-      event: "app/invoice.paid",
-      match: "data.invoiceId",
+    // 3. Step: Wait for Event (Human/System interaction)
+    const payment = await step.waitForEvent("wait-payment", {
+      event: "shop/payment.success",
+      match: "data.orderId",
       timeout: "24h"
     });
-
+    
+    // 4. Step: Conditional Logic
     if (!payment) {
-      // 4. Conditional Logic based on events
-      await step.run("send-reminder", async () => {
-        // send email logic
-      });
+        await step.run("cancel-order", async () => { ... });
     }
-    
-    return { success: true };
   }
 );
 ```
 
-### 3. Scheduled (Cron) Function Template
+### 2. Parallelism
+Run steps concurrently to speed up execution.
 
 ```typescript
-import { inngest } from "@/lib/inngest/client";
-
-export const weeklyDigest = inngest.createFunction(
-  { id: "weekly-digest-email" },
-  { cron: "0 9 * * MON" }, // Every Monday at 9am
-  async ({ step }) => {
-    const users = await step.run("fetch-users", async () => {
-      return await db.users.findMany({ where: { newsletter: true } });
-    });
-
-    // Loop handling: Inngest handles loops best when the heavy lifting is inside a step
-    // OR distribute work by sending events for each user (Fan-out pattern)
-    const events = users.map(user => ({
-      name: "app/send.digest",
-      data: { userId: user.id }
-    }));
-
-    await step.sendEvent("fan-out-emails", events);
-    
-    return { count: events.length };
-  }
-);
+const [user, subscription] = await Promise.all([
+  step.run("fetch-user", () => db.users.find(...)),
+  step.run("fetch-sub", () => stripe.subscriptions.retrieve(...))
+]);
 ```
 
-### 4. Registration (Critical)
-
-You **MUST** update `src/lib/inngest/functions/index.ts`:
+### 3. Working with Loops
+Inside loops, ensure step IDs are unique.
 
 ```typescript
-// 1. Import your function
-import { yourFunctionName } from "./app/invoice/created/generatePdf";
-import { weeklyDigest } from "./cron/weeklyDigest";
-
-// 2. Add event type definition (Only for event-based functions)
-export type InngestEvents = {
-  "app/invoice.created": {
-    data: {
-      invoiceId: string;
-      amount: number;
-    };
-  };
-  "app/send.digest": {
-    data: { userId: string };
-  }
-  // ... existing events
-};
-
-// 3. Add to functions array
-export const functions = [
-  // ... existing functions
-  yourFunctionName,
-  weeklyDigest
-];
+const items = event.data.items;
+for (const item of items) {
+  // Use dynamic ID to ensure uniqueness per item
+  await step.run(`process-item-${item.id}`, async () => {
+    await processItem(item);
+  });
+}
 ```
 
-## Advanced Features & Patterns
+## Configuration & Flow Control
 
-### Flow Control
-- **Rate Limit**: `{ rateLimit: { key: "event.data.userId", limit: 1, period: "1m" } }` - Prevent bursts.
-- **Throttle**: `{ throttle: { key: "event.data.userId", limit: 1, period: "1h" } }` - Drop excess events.
-- **Debounce**: `{ debounce: { key: "event.data.itemId", period: "5m" } }` - Wait for "quiet" period.
-- **Priority**: `{ priority: { run: "event.data.isPremium ? 100 : 0" } }` - Prioritize VIP users.
-
-### Error Handling & Retries
-- **Automatic Retries**: Inngest retries failed steps automatically with exponential backoff.
-- **Non-Retriable Errors**: Throw `new NonRetriableError("Stop")` to halt immediately.
-- **Custom Retries**: `{ retries: 0 }` in function config to disable, or handle `try/catch` inside `step.run` (be careful, `step.run` captures errors).
+### Rate Limiting & Throttling
+Prevent overwhelming 3rd party APIs.
 
 ```typescript
-// Failure Handler (runs if the function fails all retries)
-export const myFunction = inngest.createFunction(
+inngest.createFunction({
+    id: "sync-crm",
+    // Max 10 requests per minute per user
+    rateLimit: { limit: 10, period: "1m", key: "event.data.userId" },
+    // Drop events if queue is full
+    throttle: { limit: 5, period: "1s" } 
+}, ...);
+```
+
+### Debounce
+Process only the latest event in a window (e.g., search indexing).
+
+```typescript
+inngest.createFunction({
+    id: "index-product",
+    // Wait 10s for more events; only run with the latest data
+    debounce: { period: "10s", key: "event.data.productId" }
+}, ...);
+```
+
+### Priority
+Prioritize specific events (e.g., Paid users).
+
+```typescript
+inngest.createFunction({
+    id: "generate-report",
+    // High number = High priority
+    priority: { run: "event.data.plan === 'enterprise' ? 100 : 0" }
+}, ...);
+```
+
+## Error Handling
+
+### Automatic Retries
+Inngest retries steps automatically on error (default ~4-5 times with backoff).
+-   **Customize**: `{ retries: 10 }` in config.
+
+### Non-Retriable Errors
+Stop execution immediately if the error is fatal (e.g., 400 Bad Request).
+
+```typescript
+import { NonRetriableError } from "inngest";
+
+await step.run("validate", async () => {
+  if (!isValid) throw new NonRetriableError("Invalid payload");
+});
+```
+
+### Failure Handlers (Rollbacks)
+Execute cleanup logic if the function fails after all retries.
+
+```typescript
+export const riskyFunc = inngest.createFunction(
   { 
-    id: "process-payment",
+    id: "risky-transfer",
+    // Runs if main handler fails
     onFailure: async ({ error, event, step }) => {
+      await step.run("rollback-funds", async () => {
+        await reverseTransfer(event.data.transferId);
+      });
       await step.run("notify-admin", async () => {
-        await sendSlackAlert(`Function failed: ${error.message}`);
+        await sendAlert(`Transfer failed: ${error.message}`);
       });
     }
   },
-  { event: "app/payment.process" },
-  async ({ event }) => { /* ... */ }
+  { event: "bank/transfer.init" },
+  async ({ step }) => { /* ... */ }
 );
 ```
 
-### Local Development
-- The Inngest Dev Server runs at `http://localhost:8288` by default.
-- Use it to trigger events manually and inspect function runs.
-- Any changes to files in `src/lib/inngest/functions` hot-reload automatically.
-
-Refer to [reference.md](reference.md) for more details.
+## Registration
+**MANDATORY**: All functions must be imported and exported in `src/lib/inngest/functions/index.ts`.

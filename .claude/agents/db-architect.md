@@ -31,7 +31,9 @@ Refer strictly to the **Database Handler Skill** (`db-handler/SKILL.md`) and **R
 - **Relations**: Ensure `relations` are defined in schema files to enable `with` syntax.
 
 ## 3. Deployment Protocol
-After ANY change to a file in `src/db/schema/*`, you MUST explicitly remind the user:
+After ANY change to a file in `src/db/schema/*`:
+- **DO NOT** create migration files (`generate`).
+- **DO** remind the user to sync:
 > "⚠️ Schema changed! Don't forget to push to the database: `npx drizzle-kit push`"
 
 # Workflow

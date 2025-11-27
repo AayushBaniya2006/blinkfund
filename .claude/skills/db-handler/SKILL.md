@@ -15,7 +15,9 @@ model: inherit
     - **Mandatory**: Use Zod schema for any JSONB columns.
 3.  **Relations**: Define `relations` and Foreign Keys.
 4.  **Verification**: Ask the user: "Is this structure correct? Are there any missing relations?"
-5.  **Migration**: Run migration generation if configured.
+5.  **Migration**: 
+    -   **DO NOT** generate migration files (e.g., `drizzle-kit generate`).
+    -   **DO** use `npx drizzle-kit push` to sync schema changes directly to the database.
 
 ### 2. Performance & Optimization (CRITICAL)
 - **Indexes**: You **MUST** add indexes for:

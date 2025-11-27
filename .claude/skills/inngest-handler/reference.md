@@ -1,54 +1,75 @@
 # Inngest Reference
 
 ## File Structure
-- **Client**: `src/lib/inngest/client.ts`
-- **Index/Registry**: `src/lib/inngest/functions/index.ts`
-- **Functions**: `src/lib/inngest/functions/[domain]/[action]/[handler].ts`
+-   **Client**: `src/lib/inngest/client.ts`
+-   **Registry**: `src/lib/inngest/functions/index.ts`
+-   **Definitions**: `src/lib/inngest/functions/[domain]/[action].ts`
 
-## Common Patterns
+## Code Snippets
 
-### Sleep
+### Basic Step
 ```typescript
-// Wait for a duration
-await step.sleep("wait-1-day", "1d");
-// Wait until a specific timestamp
-await step.sleepUntil("wait-for-date", new Date("2024-01-01"));
+const result = await step.run("step-id", async () => {
+  return await db.query();
+});
+```
+
+### Sleep (Delay)
+```typescript
+// Wait for time
+await step.sleep("wait-10m", "10m");
+
+// Wait until date
+await step.sleepUntil("wait-for-launch", new Date("2025-01-01"));
 ```
 
 ### Wait For Event
 ```typescript
-const result = await step.waitForEvent("wait-approval", {
+const event = await step.waitForEvent("wait-approval", {
   event: "app/approval.received",
-  match: "data.requestId", // Matches event.data.requestId with current event.data.requestId
-  timeout: "7d"
+  match: "data.proposalId", // Correlate events
+  timeout: "3d",
+  ifExpression: "event.data.approved == true" // Optional condition
 });
 ```
 
-### Send Event (Fan-out)
+### Send Event
 ```typescript
-await step.sendEvent("notify-users", [
-  { name: "app/notify", data: { id: 1 } },
-  { name: "app/notify", data: { id: 2 } }
+await step.sendEvent("broadcast", [
+  { name: "user.notify", data: { msg: "Hello" } },
+  { name: "analytics.track", data: { event: "ping" } }
 ]);
 ```
 
-### Invoke Function directly
+### Invoke Other Function
 ```typescript
-await step.invoke("call-another-fn", {
-  function: anotherFunction,
-  data: { foo: "bar" }
+const result = await step.invoke("call-worker", {
+  function: require("./worker").workerFn,
+  data: { jobId: 123 }
 });
 ```
 
-### Cron Schedule
+### Config Object
 ```typescript
-// Run every Monday at 9am
-{ cron: "0 9 * * MON" }
+{
+  id: "function-id",
+  concurrency: { limit: 5, key: "event.data.accountId" },
+  rateLimit: { limit: 100, period: "1h" },
+  debounce: { period: "1m", key: "event.data.id" },
+  priority: { run: "event.data.isVip ? 100 : 0" },
+  retries: 3, // 0 to disable
+  cancelOn: [{ event: "app/process.cancel", match: "data.id" }],
+  onFailure: async ({ error, step }) => { ... }
+}
 ```
 
-### Failure Handler
+### Error Handling
 ```typescript
-onFailure: async ({ error, step }) => {
-  await step.run("log-failure", () => console.error(error));
-}
+import { NonRetriableError } from "inngest";
+
+// Stop retrying immediately
+throw new NonRetriableError("Config missing");
+
+// Retry logic is automatic for standard Errors
+throw new Error("API unavailable"); // Will retry
 ```

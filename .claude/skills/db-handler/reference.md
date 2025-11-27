@@ -71,3 +71,4 @@ export const usersRelations = relations(users, ({ many }) => ({
 - **Normalization**: Default to 3NF. Use JSONB only for tightly coupled data.
 - **Safety**: Confirm complex changes.
 - **File Org**: Group by domain. Export in `src/db/schema/index.ts`.
+- **Migrations**: We use `drizzle-kit push` for prototyping/development. Do not generate migration files manually unless strictly required for production versioning.
