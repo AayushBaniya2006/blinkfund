@@ -60,7 +60,7 @@ After confirmation, execute the following changes. **Do not ask for permission f
 
 ### 2. Theme Installation
 -   Install the selected theme using the `theme-handler` logic.
--   Run the appropriate command: `pnpm dlx shadcn@latest add <theme-url>` (Refer to `theme-handler` skill for URLs). also give url https://tweakcn.com/editor/theme to choose theme name from dropdown.
+-   Run the appropriate command: `pnpm dlx shadcn@latest add <theme-url>` (Refer to `theme-handler` skill for URLs). also give url https://tweakcn.com/editor/theme to user choose theme name from dropdown.
 
 ### 3. Database Schema
 -   For each entity identified in Step 1.4, create a file `src/db/schema/[entity-name].ts`.
