@@ -29,7 +29,9 @@ Based on the context and description, ask up to 5 specific questions to clarify 
 2.  **UI/UX**: "Where should this feature live in the UI? (e.g., a new Dashboard tab, a public page, or a modal within an existing page?)."
 3.  **Monetization**: "Is this feature restricted to specific plans or does it consume credits? (Refer to `credits-handler` and `plans-handler`)."
 4.  **Integrations**: "Does this feature need to send emails, upload files, or use AI? (Refer to `email-handler`, `s3-upload-handler`, `ai-handler`)."
-5.  (Optional) **Permissions**: "Are there specific role-based access controls (Super Admin vs User)?"
+5.  **Background Processing**: "Does this feature need to happen in background processing? If yes, then use skill `inngest-handler` to handle the implementation. Generally AI based models should be handled using `inngest-handler` and `ai-handler` skill because it will handle the background processing and credit deduction and other related stuff."
+7.  **Chat UI**: "Does this feature need to have a chat UI? If yes, then use skill `ai-sdk-handler` to handle the implementation."
+8.  (Optional) **Permissions**: "Are there specific role-based access controls (Super Admin vs User)?"
 
 ## Phase 2: Execution Plan
 
@@ -53,6 +55,8 @@ Once you have the answers, formulate a comprehensive plan using the available sk
 5.  **Integrations** (e.g., `email-handler`, `s3-upload-handler`):
     -   List any external service integration steps.
     -   Need background processing? use inngest-handler to create a new event and function.
+
+If WYSIWYG Editor is required, then use skill `plate-handler` to handle the implementation.
 
 **Confirm with the user: "Shall I proceed with this plan?"**
 
