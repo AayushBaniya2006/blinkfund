@@ -1,4 +1,5 @@
 ---
+name: add-feature
 description: Add a new feature to the project, handling database, API, UI, and integration with existing systems like credits and plans.
 argument-hint: [feature name]
 ---

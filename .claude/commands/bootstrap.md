@@ -1,4 +1,5 @@
 ---
+name: bootstrap
 description: Bootstrap the project with custom configuration, database schemas, and admin pages based on your specific SaaS idea.
 argument-hint: [project name]
 ---
@@ -28,6 +29,7 @@ You are an expert software architect and developer. Your task is to bootstrap a 
 
 **Step 1.5**: Ask about Credits.
 -   "Does your app use a credit system (e.g., for AI usage)? If yes, what should we call the credit units? (e.g. 'image_generation', 'tokens'). If not, we can skip this."
+Use skill `credits-handler` to handle credits implementation. Also use skill `plans-handler` to handle plans implementation if required.
 
 **Step 1.6**: Ask about AI Integration (If applicable).
 -   If the project involves AI, ask for specifics: "Which AI models, platforms, or SDKs will you be using? (e.g., Vercel AI SDK, Replicate, Fal.ai, OpenAI, or a combination?)"
