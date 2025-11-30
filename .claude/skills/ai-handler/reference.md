@@ -27,4 +27,3 @@ while (status !== "succeeded" && status !== "failed") {
   status = await checkStatus();
 }
 ```
-

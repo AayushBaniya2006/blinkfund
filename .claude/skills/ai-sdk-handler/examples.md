@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 ### Client
 ```typescript
 'use client';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 
 export default function Chat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -55,7 +55,7 @@ Dynamically render React components from the server based on LLM decisions.
 
 ```typescript
 import { openai } from '@/lib/ai';
-import { streamUI } from 'ai/rsc';
+import { streamUI } from "@ai-sdk/rsc"  
 import { z } from 'zod';
 import { WeatherCard } from '@/components/weather-card';
 import { LoadingSpinner } from '@/components/ui/loading';

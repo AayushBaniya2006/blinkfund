@@ -52,7 +52,7 @@ export const POST = withAuthRequired(async (req, { session }) => {
 ```typescript
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -91,7 +91,7 @@ export default function ChatBot() {
 
 ```typescript
 import { openai } from '@/lib/ai';
-import { streamUI } from 'ai/rsc';
+import { streamUI } from "@ai-sdk/rsc"  
 import { z } from 'zod';
 import { WeatherCard } from '@/components/chat-ui/weather-card'; // Example component
 
