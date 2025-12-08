@@ -48,18 +48,23 @@ You are an expert software architect and developer. Your task is to bootstrap a 
 - "Are there any specific requirement documents or knowledge base items the AI should be aware of?"
 - "Any specific preferences for the Landing Page or App Header design? (e.g., navigation style, specific sections needed)."
 
+**Step 1.8**: Ask about Logo Generation.
+
+- "Would you like me to generate a logo for [Project Name] using AI? If yes, I'll create a minimalistic logo design and save it to `public/assets/logo.png`. (Note: Requires `REPLICATE_API_TOKEN` to be set in your environment)"
+
 ## Phase 2: Execution Plan
 
 Once you have the answers, announce the plan: "Great! I'm now going to bootstrap [Project Name]. Here is the plan:"
 
 1.  Update Config (`lib/config.ts` & `lib/credits/config.ts`).
-2.  Install Selected Theme.
-3.  Create Database Schemas (`db/schema/*.ts`).
-4.  Create Admin Forms & APIs (if applicable).
-5.  Create User Entity Pages & APIs (`app/(in-app)/app/[entity]/`).
-6.  Customize Landing Page (`app/(website-layout)/page.tsx`).
-7.  Create In-App Dashboard & Navigation.
-8.  Update Component Content & Theme.
+2.  Generate Logo (if requested) using `logo-generator` skill.
+3.  Install Selected Theme.
+4.  Create Database Schemas (`db/schema/*.ts`).
+5.  Create Admin Forms & APIs (if applicable).
+6.  Create User Entity Pages & APIs (`app/(in-app)/app/[entity]/`).
+7.  Customize Landing Page (`app/(website-layout)/page.tsx`).
+8.  Create In-App Dashboard & Navigation.
+9.  Update Component Content & Theme.
 
 
 If WYSIWYG Editor is required, then use skill `plate-handler` to handle the implementation.
@@ -67,6 +72,8 @@ If WYSIWYG Editor is required, then use skill `plate-handler` to handle the impl
 If credits are used, then use skill `credits-handler` to handle credits implementation. Also use skill `plans-handler` to handle plans implementation if required.
 
 If AI based model or some background processing is required, then use skill `inngest-handler` to handle the implementation. Generally AI based models should be handled using `inngest-handler` and `ai-handler` skill because it will handle the background processing and credit deduction and other related stuff.
+
+If logo generation is requested, then use skill `logo-generator` to handle the logo generation. Ensure `REPLICATE_API_TOKEN` is set before running the logo generation script.
 
 **Confirm with the user: "Shall I proceed?"**
 
@@ -79,19 +86,26 @@ After confirmation, execute the following changes. **Do not ask for permission f
 - **`src/lib/config.ts`**: Update `projectName`, `description`, and `keywords`.
 - **`src/lib/credits/config.ts`**: If credits are used, update `creditTypeSchema` and `creditsConfig` with the user's types.
 
-### 2. Theme Installation
+### 2. Logo Generation (If requested)
+
+- Use skill `logo-generator` to generate the logo.
+- Run: `pnpm run script .claude/skills/logo-generator/scripts/generate-logo.ts "Minimalistic Logo Design for [Project Name]" "[Project Name]"`
+- The logo will be saved to `public/assets/logo.png` with transparent background and optimized padding.
+- **Note**: Ensure `REPLICATE_API_TOKEN` is set in your environment before running.
+
+### 3. Theme Installation
 
 - Install the selected theme using the `theme-handler` logic.
 - Run the appropriate command: `pnpm dlx shadcn@latest add <theme-url>` (Refer to `theme-handler` skill for URLs). also give url https://tweakcn.com/editor/theme to user choose theme name from dropdown.
 
-### 3. Database Schema
+### 4. Database Schema
 
 - For each entity identified in Step 1.4, create a file `src/db/schema/[entity-name].ts`.
 - Use `drizzle-orm/pg-core` (pgTable, text, timestamp, uuid) and `zod`.
 - **Reference**: Look at `src/db/schema/plans.ts` for style.
 - Ensure columns include `id` (uuid default random), `createdAt`, `updatedAt`, and relevant fields for the entity.
 
-### 4. Super Admin Interface (If requested)
+### 5. Super Admin Interface (If requested)
 
 For each entity requiring admin access:
 
@@ -99,7 +113,7 @@ For each entity requiring admin access:
 - **Pages**: List, Create, Edit.
 - **API**: Standard CRUD routes.
 
-### 5. User Entity Pages & APIs
+### 6. User Entity Pages & APIs
 
 For each entity requiring user management:
 
@@ -113,7 +127,7 @@ For each entity requiring user management:
   - Ensure all queries are scoped to `req.auth.user.id`.
   - use withAuthRequired in API routes
 
-### 6. Landing Page & Layout
+### 7. Landing Page & Layout
 
 - **`src/app/(website-layout)/page.tsx`**:
   - Replace content with a compelling landing page.
@@ -122,7 +136,7 @@ For each entity requiring user management:
 - **`src/app/(website-layout)/layout.tsx`**:
   - Update metadata and structure.
 
-### 7. In-App Dashboard & Navigation
+### 8. In-App Dashboard & Navigation
 
 - **`src/app/(in-app)/app/page.tsx`**:
   - Remove demo content.
@@ -133,7 +147,7 @@ For each entity requiring user management:
 - **`src/app/(in-app)/layout.tsx`**:
   - Update the `DashboardSkeleton` to match the new layout and header structure.
 
-### 8. Component Content & Theme
+### 9. Component Content & Theme
 
 - Update the content of used components (e.g., hero, features, testimonials) to reflect the project's idea and theme.
 - Adjust the layout and styling if needed to match the specific requirements.
@@ -144,6 +158,7 @@ Once finished, report back:
 "✅ Project [Project Name] has been bootstrapped!
 
 - Config updated.
+- Logo generated (if requested).
 - Theme installed.
 - Schemas created.
 - Admin pages created (if applicable).
@@ -151,7 +166,7 @@ Once finished, report back:
 - Landing page customized.
 - In-app dashboard & Header updated.
 
-### 9. Final Setup
+### 10. Final Setup
 
 - **Database Migration**: Run `npx drizzle-kit push`.
 - **21st.dev Setup**: Run `npx @21st-dev/cli@latest install claude` to install components.
