@@ -30,7 +30,8 @@ Based on the context and description, ask up to 5 specific questions to clarify 
 3.  **Monetization**: "Is this feature restricted to specific plans or does it consume credits? (Refer to `credits-handler` and `plans-handler`)."
 4.  **Integrations**: "Does this feature need to send emails, upload files, or use AI? (Refer to `email-handler`, `s3-upload-handler`, `ai-handler`)."
 5.  **Background Processing**: "Does this feature need to happen in background processing? If yes, then use skill `inngest-handler` to handle the implementation. Generally AI based models should be handled using `inngest-handler` and `ai-handler` skill because it will handle the background processing and credit deduction and other related stuff."
-7.  **Chat UI**: "Does this feature need to have a chat UI? If yes, then use skill `ai-sdk-handler` to handle the implementation."
+6.  **Chat UI**: "Does this feature need to have a chat UI? If yes, then use skill `ai-sdk-handler` to handle the implementation."
+7.  **Visual Assets**: "Does this feature need images or visual assets (e.g., hero images, feature showcases, transformation visuals)? If yes, I can generate them using AI. (Note: Requires `REPLICATE_API_TOKEN` to be set)"
 8.  (Optional) **Permissions**: "Are there specific role-based access controls (Super Admin vs User)?"
 
 ## Phase 2: Execution Plan
@@ -55,8 +56,17 @@ Once you have the answers, formulate a comprehensive plan using the available sk
 5.  **Integrations** (e.g., `email-handler`, `s3-upload-handler`):
     -   List any external service integration steps.
     -   Need background processing? use inngest-handler to create a new event and function.
+6.  **Visual Assets** (`generate-assets`):
+    -   If visual assets are needed, specify what images to generate (hero, feature showcases, transformations).
+    -   Mention appropriate aspect ratios and folder structure.
 
 If WYSIWYG Editor is required, then use skill `plate-handler` to handle the implementation.
+
+If visual assets are requested, then use skill `generate-assets` to handle asset generation. Generate appropriate images with correct aspect ratios:
+- Hero/preview images: `16:9` or `21:9`
+- Feature showcases: `1:1` or `4:3`
+- Transformations/processes: `16:9`
+Ensure `REPLICATE_API_TOKEN` is set before running the asset generation scripts.
 
 **Confirm with the user: "Shall I proceed with this plan?"**
 
@@ -75,13 +85,38 @@ After confirmation, execute the plan step-by-step. **Do not ask for permission f
 -   Implement credit deductions if planned (`credits-handler`).
 -   Implement plan gating if planned (`plans-handler`).
 
-### 3. User Interface
+### 3. Visual Assets Generation (If requested)
+-   Use skill `generate-assets` to create images for the feature. The script automatically:
+    -   **Enhances prompts** with modern UI elements, gradients, patterns, and theme-aware styling
+    -   **Detects existing image sizes** and matches them if replacing images
+    -   **Uses appropriate defaults** for new images based on asset type
+-   **Hero/Preview Images**: Generate images showing the feature in action
+    -   Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "feature-[feature-name]-hero" "[feature-folder]" "hero" "false"`
+    -   Example: "dashboard showing [feature name] interface"
+    -   Script enhances with modern UI, gradients, patterns automatically
+-   **Feature Showcase**: If needed, generate showcase images
+    -   Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "feature-[feature-name]-showcase" "[feature-folder]" "feature" "false"`
+    -   Script auto-detects size if replacing existing images
+-   **Transformation/Process**: If showing how the feature works
+    -   Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "feature-[feature-name]-process" "[feature-folder]" "transformation" "false"`
+-   **Foreground/Decorative Assets**: For smaller decorative elements (if needed)
+    -   Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "feature-[feature-name]-decorative" "[feature-folder]" "foreground" "true"`
+    -   Uses transparent background removal
+-   **Note**: 
+    -   Prompts are automatically enhanced - use simple, descriptive prompts
+    -   All assets saved as WebP in `public/assets/images/[feature-folder]/`
+    -   Script handles aspect ratios and sizing automatically
+    -   Reference assets in UI components using Next.js Image component
+
+### 4. User Interface
 -   Create the necessary UI components using `ui-handler` (Shadcn UI).
 -   Create forms using `form-creator` (react-hook-form + zod).
+-   Use generated assets from Step 3 in components where appropriate.
+-   Reference assets: `<Image src="/assets/images/[feature-folder]/[filename].webp" alt="..." width={1920} height={1080} />`
 -   Ensure the UI is responsive and matches the current theme (`theme-handler`).
 -   Add navigation items in `src/components/layout/app-header.tsx` or `src/components/layout/sidebar.tsx` if needed.
 
-### 4. Final Wiring
+### 5. Final Wiring
 -   Connect the UI to the API/Actions.
 -   Handle loading states and error messages.
 -   Update `src/lib/config.ts` if new constants are needed.
@@ -91,6 +126,7 @@ Report back:
 "✅ Feature [Feature Name] has been successfully added!
 -   **Database**: [Summary of changes].
 -   **API**: [Summary of routes created].
+-   **Visual Assets**: [Summary of generated images, if any].
 -   **UI**: [Summary of pages/components].
 -   **Integrations**: [Summary of credits/plans/etc applied].
 

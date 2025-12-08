@@ -52,6 +52,10 @@ You are an expert software architect and developer. Your task is to bootstrap a 
 
 - "Would you like me to generate a logo for [Project Name] using AI? If yes, I'll create a minimalistic logo design and save it to `public/assets/logo.png`. (Note: Requires `REPLICATE_API_TOKEN` to be set in your environment)"
 
+**Step 1.9**: Ask about Landing Page Assets.
+
+- "Would you like me to generate images/assets for your landing page (hero sections, feature showcases, transformations)? If yes, I'll create appropriate images using AI and save them to `public/assets/images/`. (Note: Requires `REPLICATE_API_TOKEN` to be set in your environment)"
+
 ## Phase 2: Execution Plan
 
 Once you have the answers, announce the plan: "Great! I'm now going to bootstrap [Project Name]. Here is the plan:"
@@ -62,9 +66,10 @@ Once you have the answers, announce the plan: "Great! I'm now going to bootstrap
 4.  Create Database Schemas (`db/schema/*.ts`).
 5.  Create Admin Forms & APIs (if applicable).
 6.  Create User Entity Pages & APIs (`app/(in-app)/app/[entity]/`).
-7.  Customize Landing Page (`app/(website-layout)/page.tsx`).
-8.  Create In-App Dashboard & Navigation.
-9.  Update Component Content & Theme.
+7.  Generate Landing Page Assets (if requested) using `generate-assets` skill.
+8.  Customize Landing Page (`app/(website-layout)/page.tsx`).
+9.  Create In-App Dashboard & Navigation.
+10. Update Component Content & Theme.
 
 
 If WYSIWYG Editor is required, then use skill `plate-handler` to handle the implementation.
@@ -74,6 +79,12 @@ If credits are used, then use skill `credits-handler` to handle credits implemen
 If AI based model or some background processing is required, then use skill `inngest-handler` to handle the implementation. Generally AI based models should be handled using `inngest-handler` and `ai-handler` skill because it will handle the background processing and credit deduction and other related stuff.
 
 If logo generation is requested, then use skill `logo-generator` to handle the logo generation. Ensure `REPLICATE_API_TOKEN` is set before running the logo generation script.
+
+If landing page assets are requested, then use skill `generate-assets` to handle asset generation. Generate appropriate images for:
+- Hero sections (16:9 or 21:9 aspect ratio)
+- Feature showcases (1:1 or 4:3 aspect ratio)
+- Transformation/process visuals (16:9 aspect ratio)
+Ensure `REPLICATE_API_TOKEN` is set before running the asset generation scripts.
 
 **Confirm with the user: "Shall I proceed?"**
 
@@ -127,16 +138,49 @@ For each entity requiring user management:
   - Ensure all queries are scoped to `req.auth.user.id`.
   - use withAuthRequired in API routes
 
-### 7. Landing Page & Layout
+### 7. Landing Page Assets Generation (If requested)
+
+Use skill `generate-assets` to create images for the landing page. The script automatically:
+- **Enhances prompts** with modern UI elements, gradients, patterns, and theme-aware styling
+- **Detects existing image sizes** and matches them if replacing images
+- **Uses appropriate defaults** for new images based on asset type
+
+- **Hero Section Image**: Generate a hero image showing the product/solution in action
+  - Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "hero-[project-name]" "hero" "hero" "false"`
+  - Example prompt: "[Project Name] dashboard interface showing [key feature]"
+  - Script will enhance with modern UI, gradients, patterns automatically
+  
+- **Feature Showcase Images**: Generate images for each key feature (if needed)
+  - Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "feature-[feature-name]" "features" "feature" "false"`
+  - Create 2-4 feature images based on the main features
+  - Script auto-detects size if replacing existing images
+  
+- **Transformation/Process Images**: If showing how the solution works
+  - Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "transformation-[name]" "transformations" "transformation" "false"`
+  
+- **Foreground/Decorative Assets**: For smaller decorative elements (if needed)
+  - Run: `pnpm run script .claude/skills/generate-assets/scripts/generate-asset.ts "[simple prompt]" "" "decorative-[name]" "foreground" "foreground" "true"`
+  - Uses transparent background removal
+
+**Note**: 
+- Prompts are automatically enhanced - use simple, descriptive prompts
+- All assets saved as WebP format in `public/assets/images/[folder]/`
+- Script handles aspect ratios and sizing automatically
+- Ensure `REPLICATE_API_TOKEN` is set before running
+- Reference generated assets in landing page components using Next.js Image component
+
+### 8. Landing Page & Layout
 
 - **`src/app/(website-layout)/page.tsx`**:
   - Replace content with a compelling landing page.
+  - Use generated assets from Step 7 in hero sections and feature showcases.
+  - Reference assets using Next.js Image component: `<Image src="/assets/images/hero/hero-[project-name].webp" alt="..." width={1920} height={1080} />`
   - Update layout and internal components as needed to look good.
   - If user opted for credits then use useBuyCredits to customise website-credits-section.
 - **`src/app/(website-layout)/layout.tsx`**:
   - Update metadata and structure.
 
-### 8. In-App Dashboard & Navigation
+### 9. In-App Dashboard & Navigation
 
 - **`src/app/(in-app)/app/page.tsx`**:
   - Remove demo content.
@@ -147,7 +191,7 @@ For each entity requiring user management:
 - **`src/app/(in-app)/layout.tsx`**:
   - Update the `DashboardSkeleton` to match the new layout and header structure.
 
-### 9. Component Content & Theme
+### 10. Component Content & Theme
 
 - Update the content of used components (e.g., hero, features, testimonials) to reflect the project's idea and theme.
 - Adjust the layout and styling if needed to match the specific requirements.
@@ -163,11 +207,10 @@ Once finished, report back:
 - Schemas created.
 - Admin pages created (if applicable).
 - User pages & APIs created: [List paths].
+- Landing page assets generated (if requested).
 - Landing page customized.
 - In-app dashboard & Header updated.
 
-### 10. Final Setup
+### 11. Final Setup
 
 - **Database Migration**: Run `npx drizzle-kit push`.
-- **21st.dev Setup**: Run `npx @21st-dev/cli@latest install claude` to install components.
-  "

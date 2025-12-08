@@ -168,7 +168,12 @@ async function main() {
         right: 5,
         background: { r: 0, g: 0, b: 0, alpha: 0 }, // Transparent padding
       })
-      .png()
+      .png({
+        compressionLevel: 9, // Maximum compression (0-9)
+        quality: 100, // Maximum quality
+        palette: true, // Use palette if possible for smaller files
+        effort: 7, // Compression effort (0-10, higher = better compression but slower)
+      })
       .toBuffer();
 
     // Ensure directory exists
