@@ -273,11 +273,13 @@ async function SubscribePage({
         );
 
         // Add all current search params to the URL
-        Object.entries(searchParams).forEach(([key, value]) => {
+        Object.entries(await searchParams).forEach(([key, value]) => {
           if (typeof value === "string") {
             currentUrl.searchParams.set(key, value);
           }
         });
+
+        console.log("currentUrl", currentUrl.toString());
 
         return redirect(
           `/app/subscribe/billing-form?callbackUrl=${encodeURIComponent(
