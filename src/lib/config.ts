@@ -1,42 +1,43 @@
-import { AppConfigPublic } from "./types";
+/**
+ * Micro-Crowdfund Blink Platform Configuration
+ */
 
-export const appConfig: AppConfigPublic = {
-  projectName: "Indie Kit",
-  projectSlug: "indie-kit",
+export const appConfig = {
+  projectName: "BlinkFund",
+  projectSlug: "blinkfund",
   keywords: [
-    "Indie Kit",
-    "NextJS Boilerplate",
-    "NextJS SaaS",
-    "NextJS Starter Kit",
-    "SaaS Boilerplate",
-    "SaaS Starter Kit",
-    "Indie Kit Pro",
+    "Solana Blinks",
+    "Crowdfunding",
+    "Crypto Donations",
+    "Solana Actions",
+    "Web3 Fundraising",
+    "Decentralized Crowdfunding",
   ],
   description:
-    "Indie Kit is a NextJS starter kit for building your own SaaS in hours.",
+    "Create shareable Solana Blink links to collect donations directly from Twitter/X feeds. No signup required.",
+  // Auth config for compatibility with existing auth system
   auth: {
-    enablePasswordAuth: false, // Set to true to enable password-based authentication
+    enablePasswordAuth: false,
   },
+  // Email config for compatibility
+  email: {
+    senderName: "BlinkFund",
+    senderEmail: process.env.EMAIL_FROM || "noreply@example.com",
+  },
+  // Legal config for email templates
   legal: {
     address: {
-      street: "Plot No 337, Workyard, Phase 2, Industrial Business &amp; Park",
-      city: "Chandigarh",
-      state: "Punjab",
-      postalCode: "160002",
-      country: "India",
+      street: "123 Blockchain St",
+      city: "Web3 City",
+      state: "Crypto State",
+      postalCode: "00000",
+      country: "Decentraland",
     },
-    email: "ssent.hq@gmail.com",
-    phone: "+91 9876543210",
+    email: process.env.EMAIL_FROM || "support@example.com",
+    phone: "+1 000-000-0000",
   },
+  // Social links
   social: {
-    twitter: "https://twitter.com/cjsingg",
-    instagram: "https://instagram.com/-",
-    linkedin: "https://linkedin.com/-",
-    facebook: "https://facebook.com/-",
-    youtube: "https://youtube.com/-",
-  },
-  email: {
-    senderName: "Indie Kit",
-    senderEmail: "ssent.hq@gmail.com",
+    twitter: "https://twitter.com/blinkfund",
   },
 };

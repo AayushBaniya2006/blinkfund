@@ -3,7 +3,11 @@ import { z } from "zod";
 import { creditsConfig, creditTypeSchema } from "./config";
 import { Quotas } from "@/db/schema/plans";
 import { PlanProvider } from "@/lib/plans/getSubscribeUrl";
-import { MeResponse } from "@/app/api/app/me/types";
+
+// Local type to avoid circular dependency with types.ts
+type UserWithCredits = {
+  credits: { [key: string]: number | undefined } | null;
+};
 
 interface CreditBuySlab {
   from: number;
@@ -111,7 +115,7 @@ export const getCreditsBuyUrl = (params: CreditBuyParams) => {
 export const canDeductCredits = (
   creditType: CreditType,
   amount: number,
-  user: Pick<MeResponse["user"], "credits">
+  user: UserWithCredits
 ) => {
   const currentCredits = user.credits?.[creditType] || 0;
   if (currentCredits < amount) {
