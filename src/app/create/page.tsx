@@ -60,6 +60,24 @@ export default function CreateCampaignPage() {
     return `https://dial.to/?action=${encodeURIComponent(campaignUrl)}`;
   }, [campaignUrl]);
 
+  // Generate fallback donate page URL (for users without wallet extensions)
+  const fallbackUrl = useMemo(() => {
+    if (!wallet || walletError) return null;
+
+    const baseUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/donate`
+        : "/donate";
+
+    const params = new URLSearchParams();
+    params.set("wallet", wallet);
+    if (title.trim()) params.set("title", title.trim());
+    if (description.trim()) params.set("desc", description.trim());
+    if (imageUrl.trim()) params.set("image", imageUrl.trim());
+
+    return `${baseUrl}?${params.toString()}`;
+  }, [wallet, title, description, imageUrl, walletError]);
+
   const handleCopy = async () => {
     if (!campaignUrl) return;
     try {
@@ -234,6 +252,29 @@ export default function CreateCampaignPage() {
                   Share this URL on Twitter/X. Compatible wallets will
                   automatically render your donation card.
                 </p>
+
+                {/* Fallback URL for non-wallet users */}
+                {fallbackUrl && (
+                  <div className="pt-4 border-t mt-4">
+                    <h4 className="text-sm font-medium mb-2">Fallback Link (for users without wallet extensions)</h4>
+                    <div className="p-3 bg-background rounded-lg border text-xs font-mono break-all mb-3">
+                      {fallbackUrl}
+                    </div>
+                    <a
+                      href={fallbackUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="sm" className="gap-2 w-full">
+                        <ExternalLink className="w-4 h-4" />
+                        Preview Fallback Page
+                      </Button>
+                    </a>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Share this link with users who don&apos;t have Phantom/Backpack installed.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
