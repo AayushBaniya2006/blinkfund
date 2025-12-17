@@ -26,7 +26,9 @@ export const SOLANA_CONFIG = {
   // Default campaign metadata
   DEFAULT_TITLE: "Support This Project",
   DEFAULT_DESCRIPTION: "Help fund this project with a donation",
-  DEFAULT_IMAGE: `${process.env.NEXT_PUBLIC_APP_URL || "https://localhost:3000"}/images/og.png`,
+  DEFAULT_IMAGE: process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/images/og.png`
+    : "https://blinkfund.vercel.app/images/og.png",
 
   // Cluster configuration
   CLUSTER: (process.env.NEXT_PUBLIC_SOLANA_CLUSTER || "devnet") as
