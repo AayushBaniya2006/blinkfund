@@ -1,0 +1,27 @@
+{
+  "name": "BlinkFund - Real Crowdfunding on Solana",
+  "short_name": "BlinkFund",
+  "description": "Run real crowdfunding campaigns on Solana with goals, deadlines, and progress tracking. Blinks let people send money - BlinkFund lets you raise it.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

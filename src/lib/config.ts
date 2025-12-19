@@ -5,6 +5,7 @@
 export const appConfig = {
   projectName: "BlinkFund",
   projectSlug: "blinkfund",
+  tagline: "Real Crowdfunding on Solana",
   keywords: [
     "Solana Blinks",
     "Crowdfunding",
@@ -12,9 +13,17 @@ export const appConfig = {
     "Solana Actions",
     "Web3 Fundraising",
     "Decentralized Crowdfunding",
+    "Solana Crowdfunding",
+    "Crypto Fundraising",
+    "Blockchain Donations",
+    "Twitter Blinks",
+    "SOL Donations",
+    "Web3 Crowdfunding Platform",
   ],
   description:
-    "Create shareable Solana Blink links to collect donations directly from Twitter/X feeds. No signup required.",
+    "Run real crowdfunding campaigns on Solana with goals, deadlines, and progress tracking. Blinks let people send money - BlinkFund lets you raise it.",
+  longDescription:
+    "BlinkFund is the leading Solana Blinks crowdfunding platform. Create verified fundraising campaigns with goals, deadlines, and real-time progress tracking. Share on Twitter/X and receive donations directly to your wallet. Non-custodial, transparent, and powered by Solana Actions.",
   // Auth config for compatibility with existing auth system
   auth: {
     enablePasswordAuth: false,
@@ -22,7 +31,7 @@ export const appConfig = {
   // Email config for compatibility
   email: {
     senderName: "BlinkFund",
-    senderEmail: process.env.EMAIL_FROM || "noreply@example.com",
+    senderEmail: process.env.EMAIL_FROM || "blinkfund28@gmail.com",
   },
   // Legal config for email templates
   legal: {
@@ -33,11 +42,11 @@ export const appConfig = {
       postalCode: "00000",
       country: "Decentraland",
     },
-    email: process.env.EMAIL_FROM || "support@example.com",
+    email: process.env.EMAIL_FROM || "blinkfund28@gmail.com",
     phone: "+1 000-000-0000",
   },
   // Social links
   social: {
-    twitter: "https://twitter.com/blinkfund",
+    twitter: "https://x.com/FundOnBlink",
   },
 };

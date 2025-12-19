@@ -1,13 +1,29 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  // https://nextjs.org/docs/app/api-reference/file-conventions/metadata/robots
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://blinkfund.vercel.app";
+
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/app/", "/api/", "/super-admin/"],
-    },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL}/sitemap.xml`,
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/api/",
+          "/dashboard/",
+          "/super-admin/",
+          "/_next/",
+          "/private/",
+        ],
+      },
+      {
+        // Block AI crawlers from training data (optional - remove if you want AI indexing)
+        userAgent: ["GPTBot", "ChatGPT-User", "CCBot", "anthropic-ai"],
+        disallow: ["/"],
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

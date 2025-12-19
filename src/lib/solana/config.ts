@@ -31,13 +31,13 @@ export const SOLANA_CONFIG = {
     : "https://blinkfund.vercel.app/images/og.png",
 
   // Cluster configuration
-  CLUSTER: (process.env.NEXT_PUBLIC_SOLANA_CLUSTER || "devnet") as
+  CLUSTER: (process.env.NEXT_PUBLIC_SOLANA_CLUSTER || "mainnet-beta") as
     | "devnet"
     | "mainnet-beta",
 
-  // RPC URL (devnet default)
+  // RPC URL (mainnet default)
   RPC_URL:
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com",
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",
 } as const;
 
 // System program ID (cannot be used as donation destination)

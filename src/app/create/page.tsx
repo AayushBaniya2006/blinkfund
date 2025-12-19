@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,84 +11,187 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { appConfig } from "@/lib/config";
 import { SOLANA_CONFIG } from "@/lib/solana";
-import { isValidSolanaAddressFormat } from "@/lib/solana/validation";
+import { WalletSignatureVerify } from "@/components/wallet/WalletSignatureVerify";
 import {
   Zap,
   ArrowLeft,
-  Copy,
-  ExternalLink,
-  Check,
+  Target,
+  Calendar,
+  Loader2,
   AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
+type Step = "verify" | "details" | "preview" | "success";
+
+interface CampaignData {
+  title: string;
+  description: string;
+  imageUrl: string;
+  goalSol: string;
+  deadline: string;
+}
+
+interface CreatedCampaign {
+  id: string;
+  slug: string;
+  title: string;
+  url: string;
+}
+
 export default function CreateCampaignPage() {
-  const [wallet, setWallet] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const { publicKey, connected } = useWallet();
 
-  // Validate wallet address
-  const walletError = useMemo(() => {
-    if (!wallet) return null;
-    if (!isValidSolanaAddressFormat(wallet)) {
-      return "Invalid Solana wallet address";
+  const [step, setStep] = useState<Step>("verify");
+  const [verifiedWallet, setVerifiedWallet] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdCampaign, setCreatedCampaign] = useState<CreatedCampaign | null>(null);
+
+  const [formData, setFormData] = useState<CampaignData>({
+    title: "",
+    description: "",
+    imageUrl: "",
+    goalSol: "",
+    deadline: "",
+  });
+
+  // Calculate minimum deadline (tomorrow)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDeadline = tomorrow.toISOString().split("T")[0];
+
+  const handleWalletVerified = (wallet: string) => {
+    setVerifiedWallet(wallet);
+    setStep("details");
+    toast.success("Wallet verified successfully!");
+  };
+
+  const handleInputChange = (field: keyof CampaignData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-    return null;
-  }, [wallet]);
+  };
 
-  // Generate campaign URL
-  const campaignUrl = useMemo(() => {
-    if (!wallet || walletError) return null;
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-    const baseUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/api/actions/donate`
-        : "/api/actions/donate";
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required";
+    } else if (formData.title.length < 3) {
+      newErrors.title = "Title must be at least 3 characters";
+    } else if (formData.title.length > 100) {
+      newErrors.title = "Title cannot exceed 100 characters";
+    }
 
-    const params = new URLSearchParams();
-    params.set("wallet", wallet);
-    if (title.trim()) params.set("title", title.trim());
-    if (description.trim()) params.set("desc", description.trim());
-    if (imageUrl.trim()) params.set("image", imageUrl.trim());
+    if (formData.description && formData.description.length > 2000) {
+      newErrors.description = "Description cannot exceed 2000 characters";
+    }
 
-    return `${baseUrl}?${params.toString()}`;
-  }, [wallet, title, description, imageUrl, walletError]);
+    if (formData.imageUrl && !isValidUrl(formData.imageUrl)) {
+      newErrors.imageUrl = "Invalid image URL";
+    }
 
-  // Generate dial.to test URL
-  const dialToUrl = useMemo(() => {
-    if (!campaignUrl) return null;
-    return `https://dial.to/?action=${encodeURIComponent(campaignUrl)}`;
-  }, [campaignUrl]);
+    const goalNum = parseFloat(formData.goalSol);
+    if (!formData.goalSol) {
+      newErrors.goalSol = "Goal is required";
+    } else if (isNaN(goalNum) || goalNum < 0.1) {
+      newErrors.goalSol = "Goal must be at least 0.1 SOL";
+    } else if (goalNum > 100000) {
+      newErrors.goalSol = "Goal cannot exceed 100,000 SOL";
+    }
 
-  // Generate fallback donate page URL (for users without wallet extensions)
-  const fallbackUrl = useMemo(() => {
-    if (!wallet || walletError) return null;
+    if (!formData.deadline) {
+      newErrors.deadline = "Deadline is required";
+    } else {
+      const deadlineDate = new Date(formData.deadline);
+      if (deadlineDate <= new Date()) {
+        newErrors.deadline = "Deadline must be in the future";
+      }
+    }
 
-    const baseUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/donate`
-        : "/donate";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    const params = new URLSearchParams();
-    params.set("wallet", wallet);
-    if (title.trim()) params.set("title", title.trim());
-    if (description.trim()) params.set("desc", description.trim());
-    if (imageUrl.trim()) params.set("image", imageUrl.trim());
-
-    return `${baseUrl}?${params.toString()}`;
-  }, [wallet, title, description, imageUrl, walletError]);
-
-  const handleCopy = async () => {
-    if (!campaignUrl) return;
+  const isValidUrl = (url: string): boolean => {
     try {
-      await navigator.clipboard.writeText(campaignUrl);
-      setCopied(true);
-      toast.success("Campaign URL copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
+      new URL(url);
+      return true;
     } catch {
-      toast.error("Failed to copy URL");
+      return false;
+    }
+  };
+
+  const handlePreview = () => {
+    if (validateForm()) {
+      setStep("preview");
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!verifiedWallet) {
+      toast.error("Please verify your wallet first");
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: verifiedWallet,
+          title: formData.title.trim(),
+          description: formData.description.trim() || undefined,
+          imageUrl: formData.imageUrl.trim() || undefined,
+          goalSol: parseFloat(formData.goalSol),
+          deadline: new Date(formData.deadline).toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create campaign");
+      }
+
+      // Campaign created as draft - now publish it
+      const publishResponse = await fetch(`/api/campaigns/${data.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: verifiedWallet }),
+      });
+
+      const publishData = await publishResponse.json();
+
+      if (!publishResponse.ok) {
+        // Campaign created but not published - still show success
+        console.warn("Campaign created but not published:", publishData.error);
+      }
+
+      setCreatedCampaign({
+        id: data.id,
+        slug: data.slug,
+        title: data.title,
+        url: data.url,
+      });
+      setStep("success");
+      toast.success("Campaign created successfully!");
+    } catch (error) {
+      console.error("Create campaign error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create campaign");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,194 +225,339 @@ export default function CreateCampaignPage() {
 
           <h1 className="text-3xl font-bold mb-2">Create Your Campaign</h1>
           <p className="text-muted-foreground mb-8">
-            Fill in your details to generate a shareable Blink URL for Twitter/X.
+            Set a goal, verify your wallet, and start raising funds.
           </p>
 
-          {/* Form */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Campaign Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Wallet Address */}
-              <div className="space-y-2">
-                <Label htmlFor="wallet">
-                  Solana Wallet Address <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="wallet"
-                  placeholder="Your Solana wallet address (e.g., 7EcD...LtV)"
-                  value={wallet}
-                  onChange={(e) => setWallet(e.target.value)}
-                  className={walletError ? "border-destructive" : ""}
-                />
-                {walletError && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {walletError}
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 mb-8">
+            {["verify", "details", "preview", "success"].map((s, i) => (
+              <div key={s} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    step === s
+                      ? "bg-primary text-primary-foreground"
+                      : ["verify", "details", "preview", "success"].indexOf(step) > i
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {i + 1}
+                </div>
+                {i < 3 && (
+                  <div
+                    className={`w-12 h-0.5 mx-1 ${
+                      ["verify", "details", "preview", "success"].indexOf(step) > i
+                        ? "bg-primary/50"
+                        : "bg-muted"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step 1: Wallet Verification */}
+          {step === "verify" && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 1: Verify Your Wallet</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-6">
+                    Connect and verify your Solana wallet to prove ownership.
+                    Donations will go directly to this wallet.
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Donations will be sent directly to this wallet.
-                </p>
-              </div>
-
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Campaign Title</Label>
-                <Input
-                  id="title"
-                  placeholder={SOLANA_CONFIG.DEFAULT_TITLE}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={100}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {title.length}/100 characters
-                </p>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder={SOLANA_CONFIG.DEFAULT_DESCRIPTION}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  maxLength={500}
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {description.length}/500 characters
-                </p>
-              </div>
-
-              {/* Image URL */}
-              <div className="space-y-2">
-                <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional. Provide a direct link to an image for your campaign card.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Generated URL */}
-          {campaignUrl && (
-            <Card className="mb-8 border-primary/50 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Check className="w-5 h-5 text-primary" />
-                  Your Campaign URL
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <div className="p-4 bg-background rounded-lg border text-sm font-mono break-all">
-                    {campaignUrl}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-2 right-2"
-                    onClick={handleCopy}
-                  >
-                    {copied ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button onClick={handleCopy} className="gap-2 flex-1">
-                    <Copy className="w-4 h-4" />
-                    Copy URL
-                  </Button>
-                  {dialToUrl && (
-                    <a
-                      href={dialToUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button variant="outline" className="gap-2 w-full">
-                        <ExternalLink className="w-4 h-4" />
-                        Test on dial.to
-                      </Button>
-                    </a>
-                  )}
-                </div>
-
-                <p className="text-sm text-muted-foreground">
-                  Share this URL on Twitter/X. Compatible wallets will
-                  automatically render your donation card.
-                </p>
-
-                {/* Fallback URL for non-wallet users */}
-                {fallbackUrl && (
-                  <div className="pt-4 border-t mt-4">
-                    <h4 className="text-sm font-medium mb-2">Fallback Link (for users without wallet extensions)</h4>
-                    <div className="p-3 bg-background rounded-lg border text-xs font-mono break-all mb-3">
-                      {fallbackUrl}
-                    </div>
-                    <a
-                      href={fallbackUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm" className="gap-2 w-full">
-                        <ExternalLink className="w-4 h-4" />
-                        Preview Fallback Page
-                      </Button>
-                    </a>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Share this link with users who don&apos;t have Phantom/Backpack installed.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  <WalletSignatureVerify
+                    onVerified={handleWalletVerified}
+                    onError={(error) => toast.error(error)}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           )}
 
-          {/* Info Cards */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Card className="bg-card/50">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-2">Donation Presets</h3>
-                <div className="flex flex-wrap gap-2">
-                  {SOLANA_CONFIG.AMOUNT_PRESETS.map((amount) => (
-                    <span
-                      key={amount}
-                      className="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full"
-                    >
-                      {amount} SOL
+          {/* Step 2: Campaign Details */}
+          {step === "details" && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 2: Campaign Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Verified Wallet Display */}
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-sm">
+                      Verified: {verifiedWallet?.slice(0, 6)}...
+                      {verifiedWallet?.slice(-4)}
                     </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-2">Platform Fee</h3>
-                <p className="text-2xl font-bold text-primary">
-                  {(SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0)}%
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Deducted from each donation
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="space-y-2">
+                    <Label htmlFor="title">
+                      Campaign Title <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., Save the Whales"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange("title", e.target.value)}
+                      className={errors.title ? "border-destructive" : ""}
+                      maxLength={100}
+                    />
+                    {errors.title && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.title}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {formData.title.length}/100 characters
+                    </p>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Tell supporters what you're raising funds for..."
+                      value={formData.description}
+                      onChange={(e) => handleInputChange("description", e.target.value)}
+                      className={errors.description ? "border-destructive" : ""}
+                      maxLength={2000}
+                      rows={4}
+                    />
+                    {errors.description && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {formData.description.length}/2000 characters
+                    </p>
+                  </div>
+
+                  {/* Goal Amount */}
+                  <div className="space-y-2">
+                    <Label htmlFor="goal">
+                      Funding Goal (SOL) <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="goal"
+                        type="number"
+                        min="0.1"
+                        max="100000"
+                        step="0.1"
+                        placeholder="10"
+                        value={formData.goalSol}
+                        onChange={(e) => handleInputChange("goalSol", e.target.value)}
+                        className={`pl-10 ${errors.goalSol ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.goalSol && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.goalSol}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Minimum 0.1 SOL, maximum 100,000 SOL
+                    </p>
+                  </div>
+
+                  {/* Deadline */}
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">
+                      Campaign Deadline <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="deadline"
+                        type="date"
+                        min={minDeadline}
+                        value={formData.deadline}
+                        onChange={(e) => handleInputChange("deadline", e.target.value)}
+                        className={`pl-10 ${errors.deadline ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.deadline && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.deadline}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Campaign will stop accepting donations after this date
+                    </p>
+                  </div>
+
+                  {/* Image URL */}
+                  <div className="space-y-2">
+                    <Label htmlFor="image">Image URL (Optional)</Label>
+                    <Input
+                      id="image"
+                      type="url"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.imageUrl}
+                      onChange={(e) => handleInputChange("imageUrl", e.target.value)}
+                      className={errors.imageUrl ? "border-destructive" : ""}
+                    />
+                    {errors.imageUrl && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.imageUrl}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep("verify")}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button onClick={handlePreview} className="flex-1">
+                      Preview Campaign
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 3: Preview */}
+          {step === "preview" && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 3: Review Your Campaign</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Preview Card */}
+                  <div className="border rounded-lg overflow-hidden">
+                    {formData.imageUrl && (
+                      <div className="aspect-video bg-muted relative">
+                        <img
+                          src={formData.imageUrl}
+                          alt={formData.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-4 space-y-3">
+                      <h3 className="text-xl font-bold">{formData.title}</h3>
+                      {formData.description && (
+                        <p className="text-muted-foreground text-sm">
+                          {formData.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Goal</span>
+                        <span className="font-semibold">{formData.goalSol} SOL</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Deadline</span>
+                        <span className="font-semibold">
+                          {new Date(formData.deadline).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Wallet</span>
+                        <span className="font-mono text-xs">
+                          {verifiedWallet?.slice(0, 6)}...{verifiedWallet?.slice(-4)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                    <strong>Platform fee:</strong> {(SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0)}% of each donation
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep("details")}
+                      className="flex-1"
+                      disabled={isSubmitting}
+                    >
+                      Edit Details
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      className="flex-1"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Launch Campaign"
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 4: Success */}
+          {step === "success" && createdCampaign && (
+            <div className="space-y-6">
+              <Card className="border-green-500/50 bg-green-500/5">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-500" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Campaign Created!</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Your campaign &quot;{createdCampaign.title}&quot; is now live.
+                  </p>
+
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => router.push(createdCampaign.url)}
+                      className="w-full"
+                    >
+                      View Campaign
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const url = `${window.location.origin}${createdCampaign.url}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Campaign URL copied!");
+                      }}
+                      className="w-full"
+                    >
+                      Copy Campaign Link
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => router.push("/dashboard")}
+                      className="w-full"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>

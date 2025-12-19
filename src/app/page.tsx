@@ -5,12 +5,15 @@ import { appConfig } from "@/lib/config";
 import { SOLANA_CONFIG } from "@/lib/solana";
 import {
   Zap,
-  Share2,
+  Target,
   Wallet,
   ArrowRight,
   Twitter,
-  Globe,
   Shield,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -26,11 +29,17 @@ export default function HomePage() {
             <span className="font-bold text-xl">{appConfig.projectName}</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard"
+              className="text-sm text-muted-foreground hover:text-foreground hidden sm:block"
+            >
+              Dashboard
+            </Link>
             <span className="text-sm text-muted-foreground hidden sm:block">
               {SOLANA_CONFIG.CLUSTER === "devnet" ? "Devnet" : "Mainnet"}
             </span>
             <Link href="/create">
-              <Button>Create Campaign</Button>
+              <Button>Start Campaign</Button>
             </Link>
           </div>
         </div>
@@ -40,37 +49,64 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-20 md:py-32">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm mb-6">
-            <Zap className="w-4 h-4" />
-            <span>Powered by Solana Blinks</span>
+            <Target className="w-4 h-4" />
+            <span>Real Crowdfunding on Solana</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            Crowdfund Directly on{" "}
-            <span className="text-primary">Twitter/X</span>
+            Blinks Let People Send Money.{" "}
+            <span className="text-primary">BlinkFund Lets You Raise It.</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {appConfig.description}
+            Run real crowdfunding campaigns with goals, deadlines, and progress
+            tracking. Not just tip jars - accountable fundraising on Solana.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/create">
               <Button size="lg" className="gap-2 w-full sm:w-auto">
-                Create Your Campaign
+                Start Your Campaign
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <a
-              href="https://dial.to"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <Link href="/dashboard">
               <Button
                 size="lg"
                 variant="outline"
                 className="gap-2 w-full sm:w-auto"
               >
-                <Globe className="w-4 h-4" />
-                Test on dial.to
+                <Wallet className="w-4 h-4" />
+                Creator Dashboard
               </Button>
-            </a>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition */}
+      <section className="container mx-auto px-4 py-16 border-t border-border/20">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">Goals</div>
+              <p className="text-muted-foreground">
+                Set funding targets and track progress in real-time
+              </p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                Deadlines
+              </div>
+              <p className="text-muted-foreground">
+                Time-bound campaigns create urgency and accountability
+              </p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                Verified
+              </div>
+              <p className="text-muted-foreground">
+                Wallet ownership proof ensures creator authenticity
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -85,34 +121,36 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Wallet className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">1. Enter Details</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  1. Verify & Create
+                </h3>
                 <p className="text-muted-foreground">
-                  Add your Solana wallet address, campaign title, description,
-                  and image. No signup required.
+                  Connect your wallet, prove ownership with a signature, then
+                  set your funding goal and deadline.
                 </p>
               </CardContent>
             </Card>
             <Card className="bg-card/50 border-border/50">
               <CardContent className="pt-6">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Share2 className="w-6 h-6 text-primary" />
+                  <Twitter className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">2. Share Link</h3>
+                <h3 className="text-xl font-semibold mb-2">2. Share on X</h3>
                 <p className="text-muted-foreground">
-                  Get your unique Blink URL and share it on Twitter/X. Wallets
-                  auto-render your campaign card.
+                  Post your Blink URL on Twitter/X. Supporters see your campaign
+                  with live progress right in their feed.
                 </p>
               </CardContent>
             </Card>
             <Card className="bg-card/50 border-border/50">
               <CardContent className="pt-6">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Zap className="w-6 h-6 text-primary" />
+                  <TrendingUp className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">3. Collect Donations</h3>
+                <h3 className="text-xl font-semibold mb-2">3. Track & Grow</h3>
                 <p className="text-muted-foreground">
-                  Supporters tap a preset amount, sign once, and SOL goes
-                  directly to your wallet. Instant.
+                  Watch donations roll in, track progress toward your goal, and
+                  manage everything from your dashboard.
                 </p>
               </CardContent>
             </Card>
@@ -124,16 +162,38 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">
-            Why Use {appConfig.projectName}?
+            Why {appConfig.projectName}?
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
-              <Twitter className="w-6 h-6 text-primary flex-shrink-0" />
+              <Target className="w-6 h-6 text-primary flex-shrink-0" />
               <div>
-                <h3 className="font-semibold mb-1">Native Twitter Experience</h3>
+                <h3 className="font-semibold mb-1">
+                  Real Goals, Real Progress
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Campaigns render as interactive cards directly in Twitter
-                  feeds - no redirects needed.
+                  Set specific funding targets. Supporters see exactly how close
+                  you are to reaching your goal.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
+              <Clock className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold mb-1">Time-Bound Campaigns</h3>
+                <p className="text-sm text-muted-foreground">
+                  Deadlines create urgency. Countdown timers show supporters
+                  when to act.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
+              <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold mb-1">Verified Creators</h3>
+                <p className="text-sm text-muted-foreground">
+                  Wallet signature verification proves you own the receiving
+                  address. No impersonation.
                 </p>
               </div>
             </div>
@@ -142,28 +202,30 @@ export default function HomePage() {
               <div>
                 <h3 className="font-semibold mb-1">Non-Custodial</h3>
                 <p className="text-sm text-muted-foreground">
-                  No middleman. Donations go straight to your wallet. You
-                  control your funds.
+                  Donations go straight to your wallet. No middleman holding
+                  your funds.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
+              <Users className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold mb-1">Transparent Donations</h3>
+                <p className="text-sm text-muted-foreground">
+                  Every donation is logged. Supporters and creators can see the
+                  full history.
                 </p>
               </div>
             </div>
             <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
               <Zap className="w-6 h-6 text-primary flex-shrink-0" />
               <div>
-                <h3 className="font-semibold mb-1">Instant Setup</h3>
+                <h3 className="font-semibold mb-1">
+                  Native Twitter Experience
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Create a campaign in under 60 seconds. No accounts, no
-                  approval process.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4 p-6 rounded-lg bg-card/30 border border-border/30">
-              <Globe className="w-6 h-6 text-primary flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold mb-1">URL-Based Config</h3>
-                <p className="text-sm text-muted-foreground">
-                  All campaign data is in the URL. Update anytime by editing
-                  the link parameters.
+                  Campaigns render as interactive cards in Twitter feeds.
+                  One-tap donations.
                 </p>
               </div>
             </div>
@@ -174,9 +236,9 @@ export default function HomePage() {
       {/* Presets Info */}
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">Donation Presets</h2>
+          <h2 className="text-2xl font-bold mb-4">Quick Donation Options</h2>
           <p className="text-muted-foreground mb-6">
-            Supporters choose from preset amounts for quick one-tap donations:
+            Supporters choose from preset amounts for instant one-tap donations:
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {SOLANA_CONFIG.AMOUNT_PRESETS.map((amount) => (
@@ -189,7 +251,8 @@ export default function HomePage() {
             ))}
           </div>
           <p className="text-sm text-muted-foreground mt-6">
-            Platform fee: {(SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0)}%
+            Platform fee:{" "}
+            {(SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0)}%
           </p>
         </div>
       </section>
@@ -197,16 +260,21 @@ export default function HomePage() {
       {/* CTA */}
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Fundraising?</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Run a Real Campaign?
+          </h2>
           <p className="text-muted-foreground mb-8">
-            Create your campaign link in seconds and share it with the world.
+            Set your goal, verify your wallet, and start raising funds with
+            accountability and transparency.
           </p>
-          <Link href="/create">
-            <Button size="lg" className="gap-2">
-              Create Campaign
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/create">
+              <Button size="lg" className="gap-2">
+                Start Your Campaign
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -221,7 +289,7 @@ export default function HomePage() {
               <span className="font-semibold">{appConfig.projectName}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Built on Solana Actions/Blinks.{" "}
+              Real crowdfunding on Solana.{" "}
               {SOLANA_CONFIG.CLUSTER === "devnet" && (
                 <span className="text-yellow-500">Currently on Devnet.</span>
               )}

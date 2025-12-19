@@ -6,7 +6,6 @@ import {
   WalletProvider as SolanaWalletProvider,
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl } from "@solana/web3.js";
 import { SOLANA_CONFIG } from "@/lib/solana/config";
 
@@ -17,10 +16,10 @@ export default function WalletProvider({ children }: { children: React.ReactNode
     return SOLANA_CONFIG.RPC_URL || clusterApiUrl(SOLANA_CONFIG.CLUSTER as "devnet" | "mainnet-beta");
   }, []);
 
-  const wallets = useMemo(() => [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-  ], []);
+  // Use empty array - modern wallet-adapter auto-detects standard wallets
+  // This prevents duplicate key errors from manually added adapters
+  // conflicting with auto-detected browser extension wallets
+  const wallets = useMemo(() => [], []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
