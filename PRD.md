@@ -1,183 +1,356 @@
-# Micro-Crowdfund Blink Platform — Product Requirements Document
+# BlinkFund — Product Requirements Document
 
 ## 1. Goal & Overview
-- Ship a **multi-project** Solana Actions/Blink platform that lets **anyone** create their own fundraising campaign and collect donations directly from X (Twitter) feeds.
-- Creators generate campaign URLs with their wallet address and project details.
-- Wallets render the UI; our surface is a Next.js API route with URL-based configuration.
-- Support an optional platform fee (1–3%), devnet-first, deployable to Vercel.
-- **No database required** - fully stateless, URL-based project configuration.
+
+BlinkFund is a **multi-project** Solana Actions/Blink crowdfunding platform that lets **anyone** create fundraising campaigns and collect donations directly from X (Twitter) feeds.
+
+### Key Features
+- **Campaign Creation**: Creators verify their wallet via cryptographic signature and create persistent campaigns with goals, deadlines, and progress tracking.
+- **Solana Blinks**: Wallets render donation UI directly in social feeds; donations are processed via Solana Actions API.
+- **Two Donation Modes**:
+  - **Campaign-based**: Persistent campaigns with progress tracking, stored in PostgreSQL.
+  - **Legacy URL-based**: Stateless tip-jar style donations via URL parameters (backwards compatible).
+- **Platform Fee**: Configurable fee (default 2%) split on each donation.
+- **Deployment**: Vercel-hosted with Neon PostgreSQL database.
 
 ## 2. Success Metrics
-- Time-to-first-campaign: < 1 minute to generate a shareable Blink URL.
-- Time-to-first-donation: < 2 clicks after wallet connect.
-- Transaction success rate: ≥ 95% on devnet (observed via explorer/logs).
-- P95 endpoint latency: < 500 ms excluding RPC/blockhash calls.
-- Adoption: Multiple creators using the platform with successful donations pre-mainnet.
+
+- **Time-to-first-campaign**: < 2 minutes including wallet verification.
+- **Time-to-first-donation**: < 2 clicks after wallet connect.
+- **Transaction success rate**: ≥ 95% (observed via explorer/logs).
+- **P95 endpoint latency**: < 500 ms excluding RPC/blockhash calls.
+- **Campaign completion rate**: Track campaigns reaching their funding goals.
 
 ## 3. Users & Stories
-- **Donor**: Sees Blink card with project info and preset buttons; taps once, signs once, funds split (project + fee) with clear summary.
-- **Creator**: Visits `/create`, enters wallet address and project details, gets a shareable Blink URL. No signup required.
-- **Operator**: Configures platform fee, cluster, min/max donation, presets, default metadata without code changes.
+
+### Donor
+- Sees Blink card with campaign info, progress bar, and preset donation buttons.
+- Taps once, signs once, funds split (creator + platform fee) with clear summary.
+- Can view campaign page with donation history and progress.
+
+### Creator
+- Visits `/create`, connects wallet, and signs verification message.
+- Enters campaign details: title, description, goal, deadline, image.
+- Gets shareable Blink URL and campaign page URL.
+- Manages campaigns via `/dashboard`: pause, resume, or cancel.
+- Tracks donations and progress in real-time.
+
+### Operator
+- Configures platform fee, cluster, min/max donation, presets via environment variables.
+- Monitors campaigns and donations via database.
 
 ## 4. Scope
-- **In-scope**: Multi-project donation Blink via URL params; link generator page; GET menu + POST transaction; static presets; simple fee split; `/actions.json`; validation; devnet-first; Vercel deployment.
-- **Out-of-scope (MVP)**: Database storage, creator accounts/dashboards, refunds, escrowed goals, fiat on-ramps, analytics UI, donation tracking.
 
-## 5. Constraints
-- Stack: Next.js App Router, TypeScript, `@solana/actions`, `@solana/web3.js`.
-- Hosting: Vercel (HTTPS required by wallets).
-- Compliance: Solana Actions spec; CORS headers.
-- Wallets: Phantom/Backpack baseline compatibility.
-- URL length: ~2000 character limit for full URLs with all params.
+### In-Scope
+- Campaign CRUD with lifecycle management (draft → active → paused/completed/cancelled)
+- Wallet verification via Ed25519 signatures
+- Donation Blink via `/api/actions/donate` (GET menu + POST transaction)
+- Campaign-based and legacy URL-based donation modes
+- Preset donation amounts with fee split
+- Campaign progress tracking (raised amount, percentage, time remaining)
+- Creator dashboard for campaign management
+- Public campaign pages with donation history
+- `/actions.json` manifest for Solana Actions discovery
+- PostgreSQL database via Drizzle ORM
+
+### Out-of-Scope
+- Refunds and escrow
+- Fiat on-ramps
+- Advanced analytics dashboard
+- Email notifications for donations
+- Social login (wallet-only authentication)
+
+## 5. Tech Stack & Constraints
+
+### Stack
+- **Framework**: Next.js 16 (App Router), TypeScript
+- **Database**: PostgreSQL (Neon serverless) + Drizzle ORM
+- **Solana**: `@solana/actions`, `@solana/web3.js`, wallet adapters
+- **UI**: Tailwind CSS, Shadcn UI
+- **Validation**: Zod
+- **Hosting**: Vercel (HTTPS required by wallets)
+
+### Constraints
+- Solana Actions spec compliance with CORS headers
+- Phantom/Backpack wallet compatibility
+- URL length ~2000 character limit for legacy mode
 
 ## 6. Experience & Flows
 
-### Creator Flow
+### Campaign Creation Flow
 1. Creator visits `/create` page.
-2. Enters wallet address, project title, description, image URL.
-3. Clicks "Generate" to get shareable Blink URL.
-4. Shares URL on X (Twitter).
-5. Supporters see the Blink card and can donate.
+2. Connects Solana wallet (Phantom, Backpack, etc.).
+3. Signs verification message (Ed25519 challenge-response).
+4. Enters campaign details:
+   - Title (3-100 characters)
+   - Description
+   - Funding goal (0.1 - 100,000 SOL)
+   - Deadline (must be in future)
+   - Image URL (optional)
+5. Previews campaign card.
+6. Clicks "Launch Campaign" to publish.
+7. Receives shareable Blink URL and campaign page URL.
 
-### Donation Flow
+### Donation Flow (Campaign-based)
 1. User sees Blink link in X feed; wallet renders Action card.
-2. User taps preset donation amount (e.g., 0.1 SOL).
-3. Wallet POSTs user account + query params.
-4. API builds tx with two transfers (creator + platform fee) and returns ActionPostResponse.
-5. Wallet shows summary, user signs, transaction broadcasts, success view shown.
+2. Card shows: title, description, image, progress bar, preset buttons.
+3. User taps preset donation amount (e.g., 0.1 SOL).
+4. Wallet POSTs to `/api/actions/donate?campaign=<id>&amount=<sol>`.
+5. API builds transaction with two transfers (creator + platform fee).
+6. Wallet shows summary, user signs, transaction broadcasts.
+7. Donation recorded in database with "pending" status.
+8. Campaign progress updates on confirmation.
 
-### Error Flow
-- Invalid wallet/account/amount → 400 with readable message and CORS headers; wallet renders error.
+### Legacy Donation Flow (Stateless)
+1. User visits Blink URL with query params: `?wallet=<address>&title=...&amount=...`.
+2. API returns Action card with preset buttons.
+3. User selects amount, signs transaction.
+4. Funds transfer directly (no database tracking).
+
+### Campaign Management Flow
+1. Creator visits `/dashboard`.
+2. Views all their campaigns with status and progress.
+3. Can pause active campaigns (stops accepting donations).
+4. Can resume paused campaigns.
+5. Can cancel/delete campaigns.
 
 ## 7. Functional Requirements
 
-### GET `/api/actions/donate`
-- **Query params**: `wallet` (required for donation), `title`, `desc`, `image` (all optional, use defaults)
-- Returns `ActionGetResponse` with title, description, image, label.
-- `links.actions`: preset donation buttons with all params passed through.
-- Validates `wallet` if provided (must be valid Solana address, not system program).
+### Database Schema
 
-### POST `/api/actions/donate`
-- **Query params**: `wallet` (required), `amount` (required), `title` (optional for message)
-- Accepts JSON `{ "account": "<user pubkey>" }`.
-- Validates `account` is a valid `PublicKey`.
-- Validates `wallet` is a valid destination address.
-- Validates amount: numeric, finite, > 0, within `[MIN_AMOUNT, MAX_AMOUNT]`.
-- Fee: `floor(totalLamports * FEE_PCT)`; project share = total − fee; require project share > 0.
-- Transaction: fee payer = user; two `SystemProgram.transfer` instructions (creator + platform fee if fee > 0).
-- Returns `ActionPostResponse` via `createPostResponse` with message summarizing donation and fee.
+#### `campaigns` Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| slug | VARCHAR | Unique URL-friendly identifier |
+| creatorWallet | VARCHAR | Verified Solana wallet address |
+| title | VARCHAR | Campaign title (3-100 chars) |
+| description | TEXT | Campaign description |
+| imageUrl | VARCHAR | Campaign image URL |
+| goalLamports | NUMERIC | Funding goal in lamports |
+| raisedLamports | NUMERIC | Total raised in lamports |
+| donationCount | INTEGER | Number of donations |
+| deadline | DATE | Campaign end date |
+| status | ENUM | draft, active, paused, completed, cancelled |
+| createdAt | TIMESTAMP | Creation timestamp |
+| updatedAt | TIMESTAMP | Last update timestamp |
+| publishedAt | TIMESTAMP | When campaign went active |
 
-### OPTIONS
-- Present for CORS on all endpoints.
+#### `donations` Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| campaignId | UUID | Foreign key to campaigns |
+| donorWallet | VARCHAR | Donor's Solana address |
+| amountLamports | NUMERIC | Total donation in lamports |
+| platformFeeLamports | NUMERIC | Platform fee portion |
+| creatorLamports | NUMERIC | Creator's portion |
+| txSignature | VARCHAR | Solana transaction signature (unique) |
+| status | ENUM | pending, confirmed, failed |
+| createdAt | TIMESTAMP | Donation timestamp |
+| confirmedAt | TIMESTAMP | Confirmation timestamp |
 
-### `/actions.json`
-- Wildcard rule: `/api/actions/donate**` to match any query params.
+#### `walletVerifications` Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| walletAddress | VARCHAR | Verified wallet (unique) |
+| signedMessage | TEXT | Challenge message that was signed |
+| signature | TEXT | Base64 encoded signature |
+| verifiedAt | TIMESTAMP | Verification timestamp |
+| expiresAt | TIMESTAMP | Expiration (30 days) |
 
-### `/create` Page
-- Form to generate campaign URLs.
-- Inputs: wallet address (required), title, description, image URL.
-- Output: shareable Blink URL with link to test on dial.to.
+### API Endpoints
 
-### Config (Platform-wide)
-- `PLATFORM_WALLET`: Fee collection wallet.
-- `PLATFORM_FEE_PERCENT`: Platform fee (0-99%).
-- `AMOUNT_PRESETS`: Donation button amounts.
-- `MIN_AMOUNT`, `MAX_AMOUNT`: Donation bounds.
-- `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION`, `DEFAULT_IMAGE`: Fallbacks.
-- `CLUSTER`: "devnet" | "mainnet-beta".
+#### GET `/api/actions/donate`
+**Query params**:
+- Campaign mode: `campaign` (campaign ID)
+- Legacy mode: `wallet`, `title`, `desc`, `image`
 
-## 8. Non-Functional Requirements
-- Performance: P95 < 500 ms excluding RPC call; cache GET payload (edge caching ok), POST not cached.
-- Availability: Best-effort on Vercel; degrade gracefully if RPC unavailable.
-- Security: No server-side keys; devnet default to avoid accidental loss; validate all user inputs.
-- Observability: Log request id, cluster, shortened accounts, amount, success/error without PII.
-- Compliance: Full Actions spec headers and shapes.
+**Returns**: `ActionGetResponse` with:
+- Title, description, image
+- Progress info (campaign mode): raised/goal SOL, percentage
+- Preset donation buttons linking to POST endpoint
 
-## 9. API Contracts (Samples)
+**Caching**: 60s for legacy, 30s for campaigns
 
-### Campaign URL Format
-```
-https://yourapp.vercel.app/api/actions/donate?wallet=7EcD...LtV&title=Save%20the%20Whales&desc=Help%20ocean%20wildlife&image=https://example.com/whale.jpg
-```
+#### POST `/api/actions/donate`
+**Query params**: `campaign` or `wallet`, `amount` (required)
 
-### GET Response
+**Body**: `{ "account": "<donor pubkey>" }`
+
+**Validation**:
+- Valid destination wallet (base58, on curve, not system program)
+- Valid donor account
+- Amount: > 0, within [MIN_AMOUNT, MAX_AMOUNT]
+- Campaign exists and is active (campaign mode)
+
+**Transaction**:
+- Fee payer: donor wallet
+- Instruction 1: Transfer to creator wallet (amount - fee)
+- Instruction 2: Transfer to platform wallet (fee)
+
+**Returns**: `ActionPostResponse` with serialized transaction and message
+
+#### GET `/api/wallet/challenge`
+**Query params**: `wallet` (required)
+
+**Returns**: Challenge message with nonce and timestamp to sign
+
+#### POST `/api/wallet/verify`
+**Body**: `{ wallet, message, signature }`
+
+**Validates**: Ed25519 signature using TweetNaCl
+
+**Returns**: Verification status, stores in database (30-day expiry)
+
+#### Campaign CRUD (`/api/campaigns/*`)
+- `POST /api/campaigns` - Create campaign (requires verified wallet)
+- `GET /api/campaigns` - List campaigns (filter by wallet, status)
+- `GET /api/campaigns/[id]` - Get campaign details
+- `PUT /api/campaigns/[id]` - Update campaign
+- `DELETE /api/campaigns/[id]` - Cancel campaign
+- `POST /api/campaigns/[id]/publish` - Publish draft campaign
+- `POST /api/campaigns/[id]/pause` - Pause active campaign
+- `POST /api/campaigns/[id]/resume` - Resume paused campaign
+
+#### `/actions.json`
 ```json
 {
-  "type": "action",
-  "title": "Save the Whales",
-  "icon": "https://example.com/whale.jpg",
-  "description": "Help ocean wildlife",
-  "label": "Donate",
-  "links": {
-    "actions": [
-      { "label": "Donate 0.1 SOL", "href": "...?wallet=7EcD...&title=...&amount=0.1", "type": "post" },
-      { "label": "Donate 0.5 SOL", "href": "...?wallet=7EcD...&title=...&amount=0.5", "type": "post" }
-    ]
-  }
+  "rules": [
+    {
+      "pathPattern": "/api/actions/donate**",
+      "apiPath": "/api/actions/donate"
+    }
+  ]
 }
 ```
 
-### POST Response
-- 200: `ActionPostResponse` with serialized tx and message.
-- 400: `Invalid "wallet"` | `Invalid "account"` | `Invalid "amount"` | generic error; always includes CORS headers.
+### Pages
 
-## 10. Validation Rules
-- Wallet must be valid base58 Solana address, not system program address.
-- Amount must be finite, > 0, within min/max bounds.
-- Fee lamports = `floor(totalLamports * FEE_PCT)`; project lamports = total − fee; must remain > 0.
-- Reject NaN, Infinity, negative, zero, or above max.
+| Route | Description |
+|-------|-------------|
+| `/create` | Multi-step campaign creation wizard |
+| `/dashboard` | Creator's campaign management dashboard |
+| `/campaign/[slug]` | Public campaign page with progress and donations |
+| `/donate` | Fallback page for non-wallet users |
 
-## 11. Configuration (Platform)
-- Platform-wide constants in `src/lib/config.ts`:
-  - `PLATFORM_WALLET`, `PLATFORM_FEE_PERCENT`
-  - `AMOUNT_PRESETS`, `MIN_AMOUNT`, `MAX_AMOUNT`
-  - `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION`, `DEFAULT_IMAGE`
-  - `CLUSTER`, `RPC_URL`
+## 8. Configuration
 
-## 12. Data/State
-- Stateless API; no database.
-- Project configuration passed via URL parameters.
-- Goal/progress text is static (no on-chain reads in MVP).
+### Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_PLATFORM_WALLET` | Fee collection wallet | System program (invalid) |
+| `NEXT_PUBLIC_SOLANA_CLUSTER` | Solana cluster | mainnet-beta |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | RPC endpoint | Public RPC |
+| `DATABASE_URL` | PostgreSQL connection string | Required |
 
-## 13. Error Handling
-- Include `ACTIONS_CORS_HEADERS` on all responses.
-- Return human-readable 400s for validation failures; 500 for unexpected errors.
-- Log errors with context (wallet, account, amount, cluster) for debugging.
+### Platform Constants (`src/lib/solana/config.ts`)
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PLATFORM_FEE_PERCENT` | 0.02 (2%) | Platform fee percentage |
+| `AMOUNT_PRESETS` | [0.1, 0.5, 1, 5] | Donation button amounts (SOL) |
+| `MIN_AMOUNT` | 0.001 | Minimum donation (SOL) |
+| `MAX_AMOUNT` | 100 | Maximum donation (SOL) |
+| `DEFAULT_TITLE` | "Support This Project" | Fallback title |
+| `DEFAULT_DESCRIPTION` | "Help fund this project..." | Fallback description |
 
-## 14. Security & Abuse
-- Default to devnet; mainnet requires explicit config change.
-- No private keys server-side; users sign locally.
-- Validate wallet addresses to prevent invalid destinations.
-- Block system program address as donation destination.
-- Optional: Rate limiting via Vercel Edge middleware.
+## 9. Validation Rules
 
-## 15. Testing Plan
-- Unit: Amount validator; wallet validator; fee split math; lamports rounding.
-- Integration: GET returns valid schema with/without wallet param; POST builds correct tx; POST rejects invalid inputs; OPTIONS responds with CORS headers.
-- Manual: Use dial.to against deployed URL on devnet; test link generator; confirm wallet shows project + fee; send donation; verify transfers on explorer.
-- Edge cases: invalid wallet format; system program as wallet; missing wallet on POST; zero/negative amount; RPC failure.
+### Wallet Validation
+- Must be valid base58 Solana address
+- Must be on ed25519 curve
+- Cannot be system program address (11111...1111)
 
-## 16. Deployment
-- Host on Vercel; Node 18+.
-- Set `PLATFORM_WALLET` before deployment.
-- Ensure `/actions.json` reachable at root.
-- Use HTTPS URL when sharing.
+### Amount Validation
+- Must be finite number
+- Must be > 0
+- Must be within [MIN_AMOUNT, MAX_AMOUNT]
+- Fee lamports = `floor(totalLamports * FEE_PCT)`
+- Creator lamports = total - fee (must be > 0)
 
-## 17. Risks & Mitigations
-- Malicious URLs with wrong wallets: Users should verify wallet in confirmation dialog; platform shows wallet in card.
-- URL tampering: All params visible in URL; no hidden configuration.
-- Fee rounding errors: Test lamports math; assert project lamports > 0.
-- RPC instability: Allow RPC override; surface friendly error.
-- Mainnet accidents: Keep devnet default.
+### Campaign Validation
+- Title: 3-100 characters
+- Goal: 0.1 - 100,000 SOL
+- Deadline: Must be in future
+- Creator wallet: Must be verified
 
-## 18. Rollout
-- Phase 1: Local + devnet testing with dial.to; test link generator and donations.
-- Phase 2: Deploy to Vercel; share with early testers; monitor logs.
-- Phase 3: If enabling mainnet, switch cluster, set real platform wallet, raise max donation.
+## 10. Security
 
-## 19. Open Questions (Resolved)
-- ✅ Multi-project support: Implemented via URL parameters.
-- ✅ Creator registration: No signup needed; URL-based.
-- Fee default: 2% (configurable).
-- Custom amount input: Presets only in MVP.
-- Success/error URLs: Optional, not implemented in MVP.
+- **No server-side keys**: Users sign transactions locally
+- **Wallet verification**: Ed25519 signatures with 30-day expiry
+- **Input validation**: All user inputs validated with Zod
+- **CORS headers**: Full Solana Actions spec compliance
+- **Ownership checks**: Only verified creators can manage their campaigns
+- **Transaction safety**: Donor is fee payer, no hidden transfers
+
+## 11. Error Handling
+
+- All responses include `ACTIONS_CORS_HEADERS`
+- 400: Validation failures with human-readable messages
+- 404: Campaign/resource not found
+- 403: Unauthorized (wallet not verified, not campaign owner)
+- 500: Unexpected errors with generic message
+
+## 12. Deployment
+
+### Requirements
+- Vercel account
+- Neon PostgreSQL database
+- Platform wallet for fee collection
+
+### Steps
+1. Set environment variables in Vercel
+2. Run database migrations: `pnpm drizzle-kit push`
+3. Deploy to Vercel
+4. Verify `/actions.json` is accessible
+5. Test with dial.to on devnet before mainnet
+
+### Environment Setup
+```bash
+NEXT_PUBLIC_PLATFORM_WALLET=<your-fee-wallet>
+NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta
+NEXT_PUBLIC_SOLANA_RPC_URL=<your-rpc-url>
+DATABASE_URL=<neon-connection-string>
+```
+
+## 13. Testing Plan
+
+### Unit Tests
+- Wallet validation (base58, curve, system program)
+- Amount validation (bounds, fee calculation)
+- Lamports conversion and rounding
+
+### Integration Tests
+- GET `/api/actions/donate` returns valid ActionGetResponse
+- POST `/api/actions/donate` builds correct transaction
+- Campaign CRUD operations
+- Wallet verification flow
+
+### Manual Testing
+1. Create campaign via `/create`
+2. Test Blink on dial.to
+3. Send donation, verify on Solana explorer
+4. Check campaign progress updates
+5. Test pause/resume/cancel flows
+
+## 14. Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Malicious campaign URLs | Show creator wallet in confirmation dialog |
+| Database unavailability | Legacy mode works without database |
+| RPC instability | Allow RPC URL override, surface friendly errors |
+| Fee rounding errors | Comprehensive lamports math tests |
+| Wallet verification expiry | 30-day window, re-verify flow available |
+
+## 15. Future Enhancements
+
+- [ ] Email notifications for donations
+- [ ] Campaign categories and discovery
+- [ ] Social sharing cards (OG images)
+- [ ] Milestone-based funding
+- [ ] Donation matching
+- [ ] Analytics dashboard for creators
+- [ ] Webhook notifications
+- [ ] Multi-currency support (USDC, etc.)
