@@ -14,7 +14,6 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   experimental: {
-    // Skip static generation of error pages to avoid context issues
     staticGenerationRetryCount: 0,
   },
 };
