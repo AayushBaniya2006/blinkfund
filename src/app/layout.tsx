@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { appConfig } from "@/lib/config";
 import ClientProviders from "./ClientProviders";
@@ -105,6 +106,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <ClientProviders>{children}</ClientProviders>
+        <Analytics />
         {/* Structured Data for Organization */}
         <script
           type="application/ld+json"
