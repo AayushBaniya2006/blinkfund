@@ -56,11 +56,11 @@ const emailProvider: EmailConfig = {
       </html>
     `;
 
-    await sendMail(
-      params.identifier,
-      `Sign in to ${appConfig.projectName}`,
-      html
-    );
+    await sendMail({
+      to: params.identifier,
+      subject: `Sign in to ${appConfig.projectName}`,
+      html,
+    });
   },
 };
 

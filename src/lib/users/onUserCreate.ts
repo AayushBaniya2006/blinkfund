@@ -58,7 +58,11 @@ const onUserCreate = async (newUser: {
       </body>
     </html>
   `;
-  await sendMail(newUser.email!, `Welcome to ${appConfig.projectName}`, html);
+  await sendMail({
+    to: newUser.email!,
+    subject: `Welcome to ${appConfig.projectName}`,
+    html,
+  });
 };
 
 export default onUserCreate;
