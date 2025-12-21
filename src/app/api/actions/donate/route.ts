@@ -98,10 +98,15 @@ export async function GET(req: NextRequest) {
         };
       });
 
+      // Use dynamic OG image for better social sharing
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://blinkfund.vercel.app";
+      const dynamicIcon = `${appUrl}/api/og/campaign/${campaignId}`;
+
       const response: ActionGetResponse = {
         type: "action",
         title: campaign.title,
-        icon: campaign.imageUrl || SOLANA_CONFIG.DEFAULT_IMAGE,
+        icon: dynamicIcon,
         description: `${campaign.description || "Support this campaign"}\n\n${raisedSol.toFixed(2)}/${goalSol.toFixed(2)} SOL raised (${progressPercent}%)`,
         label: "Donate",
         links: { actions },
@@ -192,7 +197,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   // Rate limiting
   const clientIp = getClientIp(req);
-  const rateLimitResponse = checkRateLimit(rateLimitConfigs.donate, clientIp, "donate");
+  const rateLimitResponse = checkRateLimit(
+    rateLimitConfigs.donate,
+    clientIp,
+    "donate",
+  );
   if (rateLimitResponse) {
     // Merge CORS headers with rate limit response
     const headers = new Headers(rateLimitResponse.headers);

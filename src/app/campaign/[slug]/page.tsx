@@ -44,6 +44,9 @@ export async function generateMetadata({
     campaign.description ||
     `Support "${campaign.title}" on BlinkFund. Goal: ${goalSol} SOL | Raised: ${raisedSol} SOL (${progressPercent}%). Donate with Solana Blinks.`;
 
+  // Use dynamic OG image that shows campaign details
+  const dynamicOgImage = `${baseUrl}/api/og/campaign/${campaign.id}`;
+
   return {
     title,
     description,
@@ -56,22 +59,20 @@ export async function generateMetadata({
       description,
       url: `${baseUrl}/campaign/${slug}`,
       siteName: appConfig.projectName,
-      images: campaign.imageUrl
-        ? [{ url: campaign.imageUrl, width: 1200, height: 630, alt: title }]
-        : [
-            {
-              url: "/images/og.png",
-              width: 1200,
-              height: 630,
-              alt: "BlinkFund Campaign",
-            },
-          ],
+      images: [
+        {
+          url: dynamicOgImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} - Crowdfunding on BlinkFund`,
       description,
-      images: campaign.imageUrl ? [campaign.imageUrl] : ["/images/og.png"],
+      images: [dynamicOgImage],
       site: "@FundOnBlink",
     },
     robots: {
