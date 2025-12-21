@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to fix Next.js 16 Vercel deployment issue
+export const dynamic = "force-dynamic";
+
 export default function GlobalError({
   error,
   reset,
@@ -8,7 +11,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
+    <html lang="en">
       <body>
         <div
           style={{
