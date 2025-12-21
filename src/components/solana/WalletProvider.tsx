@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
@@ -12,6 +12,12 @@ import { SOLANA_CONFIG } from "@/lib/solana/config";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 export default function WalletProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const endpoint = useMemo(() => {
     return SOLANA_CONFIG.RPC_URL || clusterApiUrl(SOLANA_CONFIG.CLUSTER as "devnet" | "mainnet-beta");
   }, []);
@@ -20,6 +26,11 @@ export default function WalletProvider({ children }: { children: React.ReactNode
   // This prevents duplicate key errors from manually added adapters
   // conflicting with auto-detected browser extension wallets
   const wallets = useMemo(() => [], []);
+
+  // Prevent SSR issues - wallet adapter hooks need browser environment
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <ConnectionProvider endpoint={endpoint}>

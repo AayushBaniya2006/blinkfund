@@ -8,6 +8,7 @@ import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana
 import { SOLANA_CONFIG } from "@/lib/solana/config";
 import WalletProvider from "@/components/solana/WalletProvider";
 import Image from "next/image";
+import Link from "next/link";
 
 function DonateForm() {
   const searchParams = useSearchParams();
@@ -113,7 +114,7 @@ function DonateForm() {
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 p-4">
       <div className="max-w-md mx-auto pt-8">
         <div className="text-center mb-6">
-          <a href="/" className="text-2xl font-bold text-primary">BlinkFund</a>
+          <Link href="/" className="text-2xl font-bold text-primary">BlinkFund</Link>
           <p className="text-sm text-muted-foreground mt-1">Solana Crowdfunding</p>
         </div>
 

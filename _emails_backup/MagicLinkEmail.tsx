@@ -1,7 +1,5 @@
 import * as React from "react";
-import { Button } from "@react-email/button";
-import { Html } from "@react-email/html";
-import { Text } from "@react-email/text";
+import { Button, Html, Text } from "@react-email/components";
 import Layout from "./components/Layout";
 import { appConfig } from "@/lib/config";
 import { formatDistanceToNow } from "date-fns";

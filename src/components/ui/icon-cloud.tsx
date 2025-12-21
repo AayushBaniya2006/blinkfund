@@ -87,20 +87,16 @@ export default function IconCloud({
     );
   }, [data, theme]);
 
-  return (
-    <Cloud {...cloudProps}>
-      <>
-        <>{renderedIcons}</>
-        {imageArray &&
-          imageArray.length > 0 &&
-          imageArray.map((image, index) => {
-            return (
-              <a key={index} href="#" onClick={(e) => e.preventDefault()}>
-                <Image height="42" width="42" alt="A globe" src={image} />
-              </a>
-            );
-          })}
-      </>
-    </Cloud>
-  );
+  const imageIcons = imageArray?.length
+    ? imageArray.map((image, index) => (
+        <a key={index} href="#" onClick={(e) => e.preventDefault()}>
+          <Image height="42" width="42" alt="A globe" src={image} />
+        </a>
+      ))
+    : [];
+
+  // Cloud expects ReactFragment (multiple children), so we spread arrays
+  const allIcons = [...(renderedIcons || []), ...imageIcons];
+
+  return <Cloud {...cloudProps}>{allIcons}</Cloud>;
 }

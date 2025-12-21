@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  reactStrictMode: false,
+  experimental: {
+    // Skip static generation of error pages to avoid context issues
+    staticGenerationRetryCount: 0,
+  },
 };
 
 export default nextConfig;

@@ -1,8 +1,5 @@
 import * as React from "react";
-import { Button } from "@react-email/button";
-import { Html } from "@react-email/html";
-import { Text } from "@react-email/text";
-import { Container } from "@react-email/container";
+import { Button, Html, Text, Container } from "@react-email/components";
 import Layout from "./components/Layout";
 import { appConfig } from "@/lib/config";
 

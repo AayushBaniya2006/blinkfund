@@ -1,10 +1,8 @@
 import { db } from "@/db";
 import { plans } from "@/db/schema/plans";
 import { users } from "@/db/schema/user";
-import { render } from "@react-email/components";
 import { eq } from "drizzle-orm";
 import { appConfig } from "../config";
-import Welcome from "@/emails/Welcome";
 import sendMail from "../email/sendMail";
 import { enableCredits, onRegisterCredits } from "../credits/config";
 import { type CreditType } from "../credits/credits";
@@ -50,13 +48,16 @@ const onUserCreate = async (newUser: {
   }
 
   // TIP: Send welcome email to user
-
-  const html = await render(
-    Welcome({
-      userName: newUser.name || "User",
-      dashboardUrl: `${appConfig.projectName}/dashboard`,
-    })
-  );
+  // TODO: Re-enable email templates after fixing react-email build issue
+  const html = `
+    <html>
+      <body>
+        <h1>Welcome to ${appConfig.projectName}, ${newUser.name || "User"}!</h1>
+        <p>Your account has been created successfully.</p>
+        <p><a href="${appConfig.projectName}/dashboard">Go to Dashboard</a></p>
+      </body>
+    </html>
+  `;
   await sendMail(newUser.email!, `Welcome to ${appConfig.projectName}`, html);
 };
 

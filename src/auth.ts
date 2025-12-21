@@ -11,8 +11,6 @@ import {
   verificationTokens,
 } from "./db/schema/user";
 import onUserCreate from "./lib/users/onUserCreate";
-import { render } from "@react-email/components";
-import MagicLinkEmail from "./emails/MagicLinkEmail";
 import sendMail from "./lib/email/sendMail";
 import { appConfig } from "./lib/config";
 import { decryptJson } from "./lib/encryption/edge-jwt";
@@ -47,9 +45,16 @@ const emailProvider: EmailConfig = {
         `Magic link for ${params.identifier}: ${params.url} expires at ${params.expires}`
       );
     }
-    const html = await render(
-      MagicLinkEmail({ url: params.url, expiresAt: params.expires })
-    );
+    // TODO: Re-enable email templates after fixing react-email build issue
+    const html = `
+      <html>
+        <body>
+          <h1>Sign in to BlinkFund</h1>
+          <p>Click <a href="${params.url}">here</a> to sign in.</p>
+          <p>This link expires at ${params.expires.toISOString()}</p>
+        </body>
+      </html>
+    `;
 
     await sendMail(
       params.identifier,

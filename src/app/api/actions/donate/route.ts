@@ -27,6 +27,7 @@ import {
 import { getCampaignById } from "@/lib/campaigns/queries";
 import { createDonation } from "@/lib/donations/queries";
 import { solToLamports, lamportsToSol } from "@/lib/campaigns/validation";
+import { rateLimitConfigs, getClientIp, checkRateLimit } from "@/lib/ratelimit";
 
 /**
  * OPTIONS handler for CORS preflight
@@ -189,6 +190,21 @@ export async function GET(req: NextRequest) {
  * POST handler - Builds and returns donation transaction
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  const clientIp = getClientIp(req);
+  const rateLimitResponse = checkRateLimit(rateLimitConfigs.donate, clientIp, "donate");
+  if (rateLimitResponse) {
+    // Merge CORS headers with rate limit response
+    const headers = new Headers(rateLimitResponse.headers);
+    Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
+      headers.set(key, value);
+    });
+    return new NextResponse(rateLimitResponse.body, {
+      status: 429,
+      headers,
+    });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const rawParams = Object.fromEntries(searchParams);

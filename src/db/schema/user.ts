@@ -6,6 +6,7 @@ import {
   primaryKey,
   integer,
   jsonb,
+  index,
 } from "drizzle-orm/pg-core";
 
 import type { AdapterAccountType } from "next-auth/adapters";
@@ -61,16 +62,21 @@ export const accounts = pgTable(
     primaryKey({
       columns: [account.provider, account.providerAccountId],
     }),
+    index("account_userId_idx").on(account.userId),
   ]
 );
 
-export const sessions = pgTable("session", {
-  sessionToken: text("sessionToken").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
+export const sessions = pgTable(
+  "session",
+  {
+    sessionToken: text("sessionToken").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (session) => [index("session_userId_idx").on(session.userId)]
+);
 
 export const verificationTokens = pgTable(
   "verificationToken",
@@ -104,5 +110,6 @@ export const authenticators = pgTable(
     primaryKey({
       columns: [authenticator.userId, authenticator.credentialID],
     }),
+    index("authenticator_userId_idx").on(authenticator.userId),
   ]
 );

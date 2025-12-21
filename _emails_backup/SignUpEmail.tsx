@@ -1,35 +1,34 @@
 import * as React from "react";
-import { Button } from "@react-email/button";
-import { Html } from "@react-email/html";
-import { Text } from "@react-email/text";
+import { Button, Html, Text } from "@react-email/components";
 import Layout from "./components/Layout";
 import { appConfig } from "@/lib/config";
 import { formatDistanceToNow } from "date-fns";
 
-interface ResetPasswordEmailProps {
+interface SignUpEmailProps {
+  name: string;
   url: string;
   expiresAt: Date;
 }
 
-export default function ResetPasswordEmail({
+export default function SignUpEmail({
+  name,
   url,
   expiresAt = new Date(Date.now() + 30 * 60 * 1000),
-}: ResetPasswordEmailProps) {
+}: SignUpEmailProps) {
   return (
     <Html>
-      <Layout previewText={`Reset your ${appConfig.projectName} password 🔐`}>
-        <Text>Hello there! 👋</Text>
+      <Layout previewText={`Complete your ${appConfig.projectName} account setup 🚀`}>
+        <Text>Hello {name}! 👋</Text>
 
         <Text>
-          We received a request to reset your password for your {appConfig.projectName} account.
-          Click the button below to set a new password.
+          Welcome to {appConfig.projectName}! Click the button below to set your password and complete your account setup.
         </Text>
 
         <Button
           href={url}
           className="bg-primary text-primary-foreground rounded-md py-2 px-4 mt-4"
         >
-          Reset Password
+          Set Your Password
         </Button>
 
         <Text className="text-muted text-[14px] mt-4">

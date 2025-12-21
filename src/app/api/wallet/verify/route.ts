@@ -10,6 +10,7 @@ import { walletVerifications } from "@/db/schema/wallet-verifications";
 import { verifyWalletSignature } from "@/lib/solana/signature";
 import { validateWalletAddress } from "@/lib/solana/validation";
 import { eq } from "drizzle-orm";
+import { rateLimitConfigs, getClientIp, checkRateLimit } from "@/lib/ratelimit";
 
 const verifyBodySchema = z.object({
   wallet: z.string().min(32).max(44),
@@ -25,6 +26,17 @@ const querySchema = z.object({
  * POST - Verify wallet signature and store verification record
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  const clientIp = getClientIp(req);
+  const rateLimitResponse = checkRateLimit(
+    rateLimitConfigs.walletVerify,
+    clientIp,
+    "wallet-verify"
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await req.json();
 
