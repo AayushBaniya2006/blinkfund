@@ -8,8 +8,6 @@ import { NextRequest } from "next/server";
 import { getCampaignById } from "@/lib/campaigns/queries";
 import { lamportsToSol } from "@/lib/campaigns/validation";
 
-export const runtime = "edge";
-
 // Image dimensions for Twitter/OG
 const WIDTH = 1200;
 const HEIGHT = 630;
