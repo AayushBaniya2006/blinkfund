@@ -8,7 +8,6 @@ import { NextRequest } from "next/server";
 import { getCampaignById } from "@/lib/campaigns/queries";
 import { lamportsToSol } from "@/lib/campaigns/validation";
 
-// Image dimensions for Twitter/OG
 const WIDTH = 1200;
 const HEIGHT = 630;
 
@@ -21,7 +20,6 @@ export async function GET(
     const campaign = await getCampaignById(id);
 
     if (!campaign) {
-      // Return a fallback image for missing campaigns
       return new ImageResponse(
         (
           <div
@@ -33,7 +31,7 @@ export async function GET(
               alignItems: "center",
               justifyContent: "center",
               background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-              fontFamily: "system-ui, sans-serif",
+              fontFamily: "system-ui",
             }}
           >
             <div
@@ -65,7 +63,7 @@ export async function GET(
                   color: "#ffffff",
                 }}
               >
-                Blink<span style={{ color: "#f5d47a" }}>Fund</span>
+                BlinkFund
               </span>
             </div>
             <span style={{ fontSize: "32px", color: "#888" }}>
@@ -81,8 +79,6 @@ export async function GET(
     const raisedSol = lamportsToSol(BigInt(campaign.raisedLamports));
     const progressPercent =
       goalSol > 0 ? Math.min(100, Math.round((raisedSol / goalSol) * 100)) : 0;
-
-    // Format deadline
     const deadline = new Date(campaign.deadline);
     const now = new Date();
     const daysLeft = Math.max(
@@ -99,51 +95,10 @@ export async function GET(
             height: "100%",
             display: "flex",
             background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-            fontFamily: "system-ui, sans-serif",
+            fontFamily: "system-ui",
             position: "relative",
           }}
         >
-          {/* Background campaign image with overlay */}
-          {campaign.imageUrl && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={campaign.imageUrl}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  opacity: 0.3,
-                }}
-              />
-            </div>
-          )}
-
-          {/* Gradient overlay for readability */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background:
-                "linear-gradient(180deg, rgba(26,26,46,0.7) 0%, rgba(22,33,62,0.95) 100%)",
-              display: "flex",
-            }}
-          />
-
-          {/* Content */}
           <div
             style={{
               position: "relative",
@@ -154,7 +109,7 @@ export async function GET(
               padding: "48px",
             }}
           >
-            {/* Header with logo */}
+            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -164,11 +119,7 @@ export async function GET(
               }}
             >
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
               >
                 <div
                   style={{
@@ -191,11 +142,9 @@ export async function GET(
                     color: "#ffffff",
                   }}
                 >
-                  Blink<span style={{ color: "#f5d47a" }}>Fund</span>
+                  BlinkFund
                 </span>
               </div>
-
-              {/* Status badge */}
               <div
                 style={{
                   display: "flex",
@@ -228,7 +177,7 @@ export async function GET(
               </div>
             </div>
 
-            {/* Campaign title */}
+            {/* Title */}
             <div
               style={{
                 display: "flex",
@@ -255,8 +204,6 @@ export async function GET(
               >
                 {campaign.title}
               </h1>
-
-              {/* Description preview */}
               {campaign.description && (
                 <p
                   style={{
@@ -266,10 +213,6 @@ export async function GET(
                     marginBottom: "32px",
                     maxWidth: "800px",
                     lineHeight: 1.4,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
                   }}
                 >
                   {campaign.description.slice(0, 120)}
@@ -278,17 +221,12 @@ export async function GET(
               )}
             </div>
 
-            {/* Progress section */}
+            {/* Progress */}
             <div
               style={{ display: "flex", flexDirection: "column", gap: "16px" }}
             >
-              {/* Amount raised */}
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: "12px",
-                }}
+                style={{ display: "flex", alignItems: "baseline", gap: "12px" }}
               >
                 <span
                   style={{
@@ -305,8 +243,6 @@ export async function GET(
                   raised of {goalSol.toFixed(2)} SOL goal
                 </span>
               </div>
-
-              {/* Progress bar */}
               <div
                 style={{
                   display: "flex",
@@ -327,8 +263,6 @@ export async function GET(
                   }}
                 />
               </div>
-
-              {/* Progress percentage */}
               <div
                 style={{
                   display: "flex",
@@ -355,15 +289,10 @@ export async function GET(
           </div>
         </div>
       ),
-      {
-        width: WIDTH,
-        height: HEIGHT,
-      },
+      { width: WIDTH, height: HEIGHT },
     );
   } catch (error) {
     console.error("OG Image generation error:", error);
-
-    // Return error fallback
     return new ImageResponse(
       (
         <div
@@ -375,16 +304,10 @@ export async function GET(
             alignItems: "center",
             justifyContent: "center",
             background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-            fontFamily: "system-ui, sans-serif",
+            fontFamily: "system-ui",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div
               style={{
                 width: "80px",
@@ -400,13 +323,9 @@ export async function GET(
               ⚡
             </div>
             <span
-              style={{
-                fontSize: "48px",
-                fontWeight: "bold",
-                color: "#ffffff",
-              }}
+              style={{ fontSize: "48px", fontWeight: "bold", color: "#ffffff" }}
             >
-              Blink<span style={{ color: "#f5d47a" }}>Fund</span>
+              BlinkFund
             </span>
           </div>
           <span

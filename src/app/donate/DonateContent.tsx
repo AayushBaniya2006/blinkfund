@@ -20,10 +20,10 @@ function DonateForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState("");
 
-  const creatorWallet = searchParams.get("wallet") || "";
-  const title = searchParams.get("title") || "Support this Campaign";
-  const description = searchParams.get("desc") || "Make a donation to support this cause";
-  const imageUrl = searchParams.get("image") || "";
+  const creatorWallet = searchParams?.get("wallet") || "";
+  const title = searchParams?.get("title") || "Support this Campaign";
+  const description = searchParams?.get("desc") || "Make a donation to support this cause";
+  const imageUrl = searchParams?.get("image") || "";
 
   const isValidWallet = (() => {
     try {
