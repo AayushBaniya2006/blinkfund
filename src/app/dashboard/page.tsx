@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -40,13 +40,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (connected && publicKey) {
-      fetchDashboardData();
-    }
-  }, [connected, publicKey]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!publicKey) return;
 
     setLoading(true);
@@ -69,7 +63,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey]);
+
+  useEffect(() => {
+    if (connected && publicKey) {
+      fetchDashboardData();
+    }
+  }, [connected, publicKey, fetchDashboardData]);
 
   if (!connected) {
     return (

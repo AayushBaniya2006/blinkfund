@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { appConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Creator Dashboard",

@@ -23,7 +23,6 @@ export type AnimatedGroupProps = {
     item?: Variants;
   };
   preset?: PresetType;
-  as?: React.ElementType;
   asChild?: React.ElementType;
 };
 
@@ -105,7 +104,6 @@ function AnimatedGroup({
   className,
   variants,
   preset,
-  as = "div",
   asChild = "div",
 }: AnimatedGroupProps) {
   const selectedVariants = {

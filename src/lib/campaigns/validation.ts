@@ -4,12 +4,6 @@
  */
 
 import { z } from "zod";
-import { SOLANA_CONFIG } from "@/lib/solana/config";
-
-// Minimum goal: 0.1 SOL in lamports
-const MIN_GOAL_LAMPORTS = 0.1 * 1_000_000_000;
-// Maximum goal: 100,000 SOL in lamports
-const MAX_GOAL_LAMPORTS = 100_000 * 1_000_000_000;
 
 /**
  * Schema for creating a new campaign

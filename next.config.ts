@@ -13,9 +13,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: false,
-  experimental: {
-    staticGenerationRetryCount: 0,
-  },
 };
 
 export default nextConfig;

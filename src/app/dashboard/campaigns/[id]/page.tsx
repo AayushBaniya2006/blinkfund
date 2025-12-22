@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -61,13 +61,7 @@ export default function CampaignManagePage({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    if (connected && publicKey) {
-      fetchCampaignData();
-    }
-  }, [connected, publicKey, id]);
-
-  const fetchCampaignData = async () => {
+  const fetchCampaignData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch campaign details
@@ -92,13 +86,20 @@ export default function CampaignManagePage({
         const donationsData = await donationsRes.json();
         setDonations(donationsData.donations || []);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error("Failed to load campaign", error);
       toast.error("Failed to load campaign");
       router.push("/dashboard");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, publicKey, router]);
+
+  useEffect(() => {
+    if (connected && publicKey) {
+      fetchCampaignData();
+    }
+  }, [connected, publicKey, fetchCampaignData]);
 
   const handlePublish = async () => {
     if (!publicKey) return;

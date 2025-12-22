@@ -9,7 +9,6 @@ import {
   type Campaign,
   type NewCampaign,
 } from "@/db/schema/campaigns";
-import { donations } from "@/db/schema/donations";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 import type { CampaignQueryInput } from "./validation";
 

@@ -26,7 +26,7 @@ import {
 } from "@/lib/solana";
 import { getCampaignById } from "@/lib/campaigns/queries";
 import { createDonation } from "@/lib/donations/queries";
-import { solToLamports, lamportsToSol } from "@/lib/campaigns/validation";
+import { lamportsToSol } from "@/lib/campaigns/validation";
 import { rateLimitConfigs, getClientIp, checkRateLimit } from "@/lib/ratelimit";
 
 /**
@@ -360,8 +360,6 @@ export async function POST(req: NextRequest) {
       amountSol,
     });
 
-    // Calculate fees for message
-    const fees = calculateFeeSplit(amountSol);
     const feePercent = (SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0);
     const campaignTitle = params.title || "this project";
 

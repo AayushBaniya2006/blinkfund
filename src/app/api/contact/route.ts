@@ -3,7 +3,6 @@ import { z } from "zod";
 import { db } from "@/db";
 import { contacts } from "@/db/schema/contact";
 import sendMail from "@/lib/email/sendMail";
-import { appConfig } from "@/lib/config";
 import { checkRateLimit, getClientIp } from "@/lib/ratelimit";
 
 const contactSchema = z.object({

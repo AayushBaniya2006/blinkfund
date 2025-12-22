@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +42,6 @@ interface CreatedCampaign {
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const { publicKey, connected } = useWallet();
 
   const [step, setStep] = useState<Step>("verify");
   const [verifiedWallet, setVerifiedWallet] = useState<string | null>(null);
@@ -446,13 +445,12 @@ export default function CreateCampaignPage() {
                   <div className="border rounded-lg overflow-hidden">
                     {formData.imageUrl && (
                       <div className="aspect-video bg-muted relative">
-                        <img
+                        <Image
                           src={formData.imageUrl}
-                          alt={formData.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
+                          alt={formData.title || "Campaign image"}
+                          fill
+                          sizes="100vw"
+                          className="object-cover"
                         />
                       </div>
                     )}
