@@ -17,9 +17,11 @@ import type { FeeCalculation, DonationTransactionParams } from "./types";
  * Creator: total - fee
  */
 export function calculateFeeSplit(amountSol: number): FeeCalculation {
-  const totalLamports = BigInt(Math.floor(amountSol * Number(LAMPORTS_PER_SOL)));
+  const totalLamports = BigInt(
+    Math.floor(amountSol * Number(LAMPORTS_PER_SOL)),
+  );
   const platformFeeLamports = BigInt(
-    Math.floor(Number(totalLamports) * SOLANA_CONFIG.PLATFORM_FEE_PERCENT)
+    Math.floor(Number(totalLamports) * SOLANA_CONFIG.PLATFORM_FEE_PERCENT),
   );
   const creatorLamports = totalLamports - platformFeeLamports;
 
@@ -43,7 +45,7 @@ export function getConnection(): Connection {
  * 2. Platform wallet receives fee (if fee > 0)
  */
 export async function buildDonationTransaction(
-  params: DonationTransactionParams
+  params: DonationTransactionParams,
 ): Promise<Transaction> {
   const { donor, creator, amountSol } = params;
 
@@ -54,6 +56,35 @@ export async function buildDonationTransaction(
     throw new Error("Donation amount too small after fee deduction");
   }
 
+  const connection = getConnection();
+
+  // Check rent exemption minimum for transfers
+  // This ensures transfers meet Solana's minimum balance requirements
+  const minimumBalanceForRentExemption =
+    await connection.getMinimumBalanceForRentExemption(0);
+
+  if (fees.creatorLamports < BigInt(minimumBalanceForRentExemption)) {
+    const minSol = minimumBalanceForRentExemption / Number(LAMPORTS_PER_SOL);
+    throw new Error(
+      `Transfer to creator must be at least ${minSol.toFixed(6)} SOL to meet rent exemption requirements`,
+    );
+  }
+
+  // Also check platform fee transfer if applicable
+  const hasPlatformFee =
+    fees.platformFeeLamports > BigInt(0) &&
+    SOLANA_CONFIG.PLATFORM_WALLET !== "11111111111111111111111111111111";
+
+  if (
+    hasPlatformFee &&
+    fees.platformFeeLamports < BigInt(minimumBalanceForRentExemption)
+  ) {
+    const minSol = minimumBalanceForRentExemption / Number(LAMPORTS_PER_SOL);
+    throw new Error(
+      `Platform fee transfer must be at least ${minSol.toFixed(6)} SOL to meet rent exemption requirements. Try a larger donation amount.`,
+    );
+  }
+
   const transaction = new Transaction();
 
   // Transfer to creator (main donation)
@@ -62,26 +93,22 @@ export async function buildDonationTransaction(
       fromPubkey: donor,
       toPubkey: creator,
       lamports: fees.creatorLamports,
-    })
+    }),
   );
 
   // Transfer platform fee (if > 0 and platform wallet is configured)
-  if (
-    fees.platformFeeLamports > BigInt(0) &&
-    SOLANA_CONFIG.PLATFORM_WALLET !== "11111111111111111111111111111111"
-  ) {
+  if (hasPlatformFee) {
     const platformWallet = new PublicKey(SOLANA_CONFIG.PLATFORM_WALLET);
     transaction.add(
       SystemProgram.transfer({
         fromPubkey: donor,
         toPubkey: platformWallet,
         lamports: fees.platformFeeLamports,
-      })
+      }),
     );
   }
 
   // Get recent blockhash for transaction
-  const connection = getConnection();
   const { blockhash, lastValidBlockHeight } =
     await connection.getLatestBlockhash();
 

@@ -5,6 +5,9 @@ import "./globals.css";
 import { appConfig } from "@/lib/config";
 import ClientProviders from "./ClientProviders";
 
+// Force all pages to be dynamic to avoid prerendering issues with client providers
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],

@@ -1,4 +1,10 @@
-function ErrorPage() {
+import { NextPageContext } from "next";
+
+interface ErrorProps {
+  statusCode?: number;
+}
+
+function Error({ statusCode }: ErrorProps) {
   return (
     <div
       style={{
@@ -6,7 +12,7 @@ function ErrorPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif",
+        fontFamily: "system-ui, -apple-system, sans-serif",
         background: "#0b0b0f",
         color: "#f5f5f5",
         padding: "2rem",
@@ -14,18 +20,18 @@ function ErrorPage() {
       }}
     >
       <div>
-        <p style={{ fontSize: "1rem", letterSpacing: "0.08em", opacity: 0.7 }}>
-          Something went wrong
-        </p>
-        <h1 style={{ fontSize: "2.5rem", margin: "0.5rem 0 1rem" }}>
-          We&apos;re working on it
+        <h1 style={{ fontSize: "2.5rem", margin: "0 0 1rem" }}>
+          {statusCode ? `Error ${statusCode}` : "An error occurred"}
         </h1>
-        <p style={{ maxWidth: "34rem", margin: "0 auto" }}>
-          An unexpected error occurred. Please refresh the page or try again shortly.
-        </p>
+        <p>Please refresh the page or try again.</p>
       </div>
     </div>
   );
 }
 
-export default ErrorPage;
+Error.getInitialProps = ({ res, err }: NextPageContext) => {
+  const statusCode = res ? res.statusCode : err ? err.statusCode : 404;
+  return { statusCode };
+};
+
+export default Error;
