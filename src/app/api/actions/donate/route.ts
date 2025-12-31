@@ -17,6 +17,8 @@ import {
 } from "@solana/actions";
 import {
   SOLANA_CONFIG,
+  BLOCKCHAIN_IDS,
+  ACTION_VERSION,
   validateWalletAddress,
   validateAmount,
   campaignParamsSchema,
@@ -28,7 +30,9 @@ import {
   actionBadRequest,
   actionServerError,
 } from "@/lib/solana";
+
 import { getCampaignById } from "@/lib/campaigns/queries";
+
 import {
   createDonationWithIdempotency,
   generateIdempotencyKey,
@@ -38,12 +42,27 @@ import { rateLimitConfigs, getClientIp, checkRateLimit } from "@/lib/ratelimit";
 import { log, generateRequestId, logDonation } from "@/lib/logging";
 
 /**
+ * Get headers for Solana Actions responses
+ * Includes required X-Action-Version and X-Blockchain-Ids headers
+ */
+function getActionHeaders(
+  extraHeaders: Record<string, string> = {},
+): Record<string, string> {
+  return {
+    ...ACTIONS_CORS_HEADERS,
+    "X-Action-Version": ACTION_VERSION,
+    "X-Blockchain-Ids": BLOCKCHAIN_IDS[SOLANA_CONFIG.CLUSTER],
+    ...extraHeaders,
+  };
+}
+
+/**
  * OPTIONS handler for CORS preflight
  */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: ACTIONS_CORS_HEADERS,
+    headers: getActionHeaders(),
   });
 }
 
@@ -127,10 +146,7 @@ export async function GET(req: NextRequest) {
       });
 
       return NextResponse.json(response, {
-        headers: {
-          ...ACTIONS_CORS_HEADERS,
-          "Cache-Control": "public, max-age=30", // Shorter cache for campaigns
-        },
+        headers: getActionHeaders({ "Cache-Control": "public, max-age=30" }),
       });
     }
 
@@ -185,10 +201,7 @@ export async function GET(req: NextRequest) {
     };
 
     return NextResponse.json(response, {
-      headers: {
-        ...ACTIONS_CORS_HEADERS,
-        "Cache-Control": "public, max-age=60", // Cache for 1 minute
-      },
+      headers: getActionHeaders({ "Cache-Control": "public, max-age=60" }),
     });
   } catch (error) {
     log("error", "GET /api/actions/donate error", {
@@ -211,13 +224,16 @@ export async function POST(req: NextRequest) {
   const rateLimitResponse = checkRateLimit(
     rateLimitConfigs.donate,
     clientIp,
-    "donate"
+    "donate",
   );
   if (rateLimitResponse) {
-    log("warn", "Rate limit exceeded for donation", { requestId, ip: clientIp });
+    log("warn", "Rate limit exceeded for donation", {
+      requestId,
+      ip: clientIp,
+    });
     // Merge CORS headers with rate limit response
     const headers = new Headers(rateLimitResponse.headers);
-    Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
+    Object.entries(getActionHeaders()).forEach(([key, value]) => {
       headers.set(key, value);
     });
     return new NextResponse(rateLimitResponse.body, {
@@ -257,7 +273,7 @@ export async function POST(req: NextRequest) {
     const amountSol = validateAmount(amountParam || "");
     if (amountSol === null) {
       return actionBadRequest(
-        `Invalid "amount": must be between ${SOLANA_CONFIG.MIN_AMOUNT} and ${SOLANA_CONFIG.MAX_AMOUNT} SOL`
+        `Invalid "amount": must be between ${SOLANA_CONFIG.MIN_AMOUNT} and ${SOLANA_CONFIG.MAX_AMOUNT} SOL`,
       );
     }
 
@@ -296,7 +312,7 @@ export async function POST(req: NextRequest) {
       const idempotencyKey = generateIdempotencyKey(
         campaign.id,
         donorWallet.toBase58(),
-        fees.totalLamports.toString()
+        fees.totalLamports.toString(),
       );
 
       // Create pending donation record with idempotency
@@ -354,7 +370,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return NextResponse.json(response, { headers: ACTIONS_CORS_HEADERS });
+      return NextResponse.json(response, { headers: getActionHeaders() });
     }
 
     // Legacy URL-based mode
@@ -405,7 +421,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(response, { headers: ACTIONS_CORS_HEADERS });
+    return NextResponse.json(response, { headers: getActionHeaders() });
   } catch (error) {
     const durationMs = Date.now() - startTime;
     log("error", "POST /api/actions/donate error", {

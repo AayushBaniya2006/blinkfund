@@ -7,6 +7,22 @@
 
 import { NextResponse } from "next/server";
 import { ACTIONS_CORS_HEADERS } from "@solana/actions";
+import { SOLANA_CONFIG, BLOCKCHAIN_IDS, ACTION_VERSION } from "./config";
+
+/**
+ * Get headers for Solana Actions responses
+ * Includes required X-Action-Version and X-Blockchain-Ids headers
+ */
+function getActionHeaders(
+  extraHeaders: Record<string, string> = {},
+): Record<string, string> {
+  return {
+    ...ACTIONS_CORS_HEADERS,
+    "X-Action-Version": ACTION_VERSION,
+    "X-Blockchain-Ids": BLOCKCHAIN_IDS[SOLANA_CONFIG.CLUSTER],
+    ...extraHeaders,
+  };
+}
 
 /**
  * Standard error response format for Solana Actions
@@ -26,7 +42,7 @@ export interface ActionErrorResponse {
  */
 export function actionErrorResponse(
   message: string,
-  status: number = 400
+  status: number = 400,
 ): NextResponse<ActionErrorResponse> {
   return NextResponse.json(
     {
@@ -35,36 +51,44 @@ export function actionErrorResponse(
     },
     {
       status,
-      headers: ACTIONS_CORS_HEADERS,
-    }
+      headers: getActionHeaders(),
+    },
   );
 }
 
 /**
  * Create a 400 Bad Request error response
  */
-export function actionBadRequest(message: string): NextResponse<ActionErrorResponse> {
+export function actionBadRequest(
+  message: string,
+): NextResponse<ActionErrorResponse> {
   return actionErrorResponse(message, 400);
 }
 
 /**
  * Create a 404 Not Found error response
  */
-export function actionNotFound(message: string): NextResponse<ActionErrorResponse> {
+export function actionNotFound(
+  message: string,
+): NextResponse<ActionErrorResponse> {
   return actionErrorResponse(message, 404);
 }
 
 /**
  * Create a 500 Internal Server Error response
  */
-export function actionServerError(message: string = "Internal server error"): NextResponse<ActionErrorResponse> {
+export function actionServerError(
+  message: string = "Internal server error",
+): NextResponse<ActionErrorResponse> {
   return actionErrorResponse(message, 500);
 }
 
 /**
  * Create a 429 Rate Limited error response
  */
-export function actionRateLimited(retryAfter: number): NextResponse<ActionErrorResponse> {
+export function actionRateLimited(
+  retryAfter: number,
+): NextResponse<ActionErrorResponse> {
   return NextResponse.json(
     {
       message: "Too many requests. Please try again later.",
@@ -72,10 +96,7 @@ export function actionRateLimited(retryAfter: number): NextResponse<ActionErrorR
     },
     {
       status: 429,
-      headers: {
-        ...ACTIONS_CORS_HEADERS,
-        "Retry-After": retryAfter.toString(),
-      },
-    }
+      headers: getActionHeaders({ "Retry-After": retryAfter.toString() }),
+    },
   );
 }

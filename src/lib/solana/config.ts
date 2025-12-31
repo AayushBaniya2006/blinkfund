@@ -25,13 +25,24 @@ function getPlatformWallet(): string {
   if (process.env.NODE_ENV === "development") {
     console.warn(
       "[SOLANA CONFIG] Platform wallet not configured. " +
-      "Platform fees will be disabled. " +
-      "Set NEXT_PUBLIC_PLATFORM_WALLET for production."
+        "Platform fees will be disabled. " +
+        "Set NEXT_PUBLIC_PLATFORM_WALLET for production.",
     );
   }
 
   return SYSTEM_PROGRAM_ID;
 }
+
+// Blockchain IDs for Actions spec
+// Mainnet: solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+// Devnet: solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1
+export const BLOCKCHAIN_IDS = {
+  "mainnet-beta": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  devnet: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+} as const;
+
+// Current Actions spec version
+export const ACTION_VERSION = "2.2";
 
 // Platform configuration
 export const SOLANA_CONFIG = {
@@ -62,7 +73,8 @@ export const SOLANA_CONFIG = {
 
   // RPC URL (mainnet default)
   RPC_URL:
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+    "https://api.mainnet-beta.solana.com",
 
   // RPC request timeout in ms
   RPC_TIMEOUT_MS: 30_000,
@@ -87,13 +99,13 @@ export function validatePlatformWalletOrThrow(): void {
     if (!process.env.NEXT_PUBLIC_PLATFORM_WALLET) {
       throw new Error(
         "CRITICAL: NEXT_PUBLIC_PLATFORM_WALLET must be set in production. " +
-        "This is required to collect platform fees."
+          "This is required to collect platform fees.",
       );
     }
     if (process.env.NEXT_PUBLIC_PLATFORM_WALLET === SYSTEM_PROGRAM_ID) {
       throw new Error(
         "CRITICAL: NEXT_PUBLIC_PLATFORM_WALLET cannot be the System Program. " +
-        "Transfers to System Program will fail."
+          "Transfers to System Program will fail.",
       );
     }
   }
