@@ -9,9 +9,11 @@ import {
 import { getDonationsByCampaign } from "@/lib/donations/queries";
 import { lamportsToSol } from "@/lib/campaigns/validation";
 import { appConfig } from "@/lib/config";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CampaignPageClient } from "./client";
-import { Target, ArrowLeft, ExternalLink } from "lucide-react";
+import { Target, ExternalLink, ArrowLeft } from "lucide-react";
 
 type PageProps = {
   params: Promise<{ slug: string }>;

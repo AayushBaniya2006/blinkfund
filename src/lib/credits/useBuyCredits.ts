@@ -18,7 +18,7 @@ const useBuyCredits = (
   creditType: CreditType,
   amount: number
 ): UseBuyCreditsResult => {
-  const { currentPlan, isLoading } = useCurrentPlan();
+  const { currentPlan, isLoading, error } = useCurrentPlan();
 
   const result = useMemo(() => {
     // If plan data is still loading, return loading state
@@ -64,7 +64,7 @@ const useBuyCredits = (
           getCreditsBuyUrl({ creditType, amount, provider }),
       };
     }
-  }, [creditType, amount, currentPlan, isLoading]);
+  }, [creditType, amount, currentPlan, isLoading, error]);
 
   return result;
 };

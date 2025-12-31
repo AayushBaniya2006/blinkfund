@@ -11,6 +11,25 @@ import { lamportsToSol } from "@/lib/campaigns/validation";
 const WIDTH = 1200;
 const HEIGHT = 630;
 
+/**
+ * Sanitize text for safe SVG rendering
+ * Prevents XSS in OG images by escaping special characters
+ */
+function sanitizeText(text: string, maxLength: number = 200): string {
+  return text
+    .replace(/[<>&"']/g, (char) => {
+      const entities: Record<string, string> = {
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[char] || char;
+    })
+    .slice(0, maxLength);
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -202,7 +221,7 @@ export async function GET(
                   maxWidth: "900px",
                 }}
               >
-                {campaign.title}
+                {sanitizeText(campaign.title, 100)}
               </h1>
               {campaign.description && (
                 <p
@@ -215,7 +234,7 @@ export async function GET(
                     lineHeight: 1.4,
                   }}
                 >
-                  {campaign.description.slice(0, 120)}
+                  {sanitizeText(campaign.description, 120)}
                   {campaign.description.length > 120 ? "..." : ""}
                 </p>
               )}

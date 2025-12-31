@@ -1,5 +1,6 @@
 import { helloWorld } from "./hello-world";
 import { expireCredits } from "./expire-credits";
+import { cleanupDonations } from "./cleanup-donations";
 
 export type InngestEvents = {
   // TIP: Add your events here, where key is the event name and value is the event data format
@@ -11,4 +12,4 @@ export type InngestEvents = {
 };
 
 // TIP: Add your functions here, failing this will result in function not being registered
-export const functions = [helloWorld, expireCredits];
+export const functions = [helloWorld, expireCredits, cleanupDonations];

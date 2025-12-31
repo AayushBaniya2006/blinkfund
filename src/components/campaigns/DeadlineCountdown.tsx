@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +38,7 @@ export function DeadlineCountdown({
   deadline,
   className,
 }: DeadlineCountdownProps) {
-  const deadlineDate = useMemo(() => new Date(deadline), [deadline]);
+  const deadlineDate = new Date(deadline);
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() =>
     calculateTimeRemaining(deadlineDate),
   );

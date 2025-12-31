@@ -9,7 +9,7 @@ import {
   DonationList,
   ShareButtons,
 } from "@/components/campaigns";
-import { Zap } from "lucide-react";
+import { Zap, ExternalLink } from "lucide-react";
 
 interface CampaignData {
   id: string;

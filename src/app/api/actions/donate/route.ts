@@ -23,11 +23,19 @@ import {
   postBodySchema,
   buildDonationTransaction,
   calculateFeeSplit,
+  actionErrorResponse,
+  actionNotFound,
+  actionBadRequest,
+  actionServerError,
 } from "@/lib/solana";
 import { getCampaignById } from "@/lib/campaigns/queries";
-import { createDonation } from "@/lib/donations/queries";
+import {
+  createDonationWithIdempotency,
+  generateIdempotencyKey,
+} from "@/lib/donations/queries";
 import { lamportsToSol } from "@/lib/campaigns/validation";
 import { rateLimitConfigs, getClientIp, checkRateLimit } from "@/lib/ratelimit";
+import { log, generateRequestId, logDonation } from "@/lib/logging";
 
 /**
  * OPTIONS handler for CORS preflight
@@ -43,6 +51,8 @@ export async function OPTIONS() {
  * GET handler - Returns ActionGetResponse with preset donation buttons
  */
 export async function GET(req: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
     const { searchParams } = new URL(req.url);
     const rawParams = Object.fromEntries(searchParams);
@@ -52,26 +62,24 @@ export async function GET(req: NextRequest) {
     if (campaignId) {
       const campaign = await getCampaignById(campaignId);
       if (!campaign) {
-        return NextResponse.json(
-          { error: "Campaign not found" },
-          { status: 404, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("warn", "Campaign not found for GET", { requestId, campaignId });
+        return actionNotFound("Campaign not found");
       }
 
       // Check campaign is active
       if (campaign.status !== "active") {
-        return NextResponse.json(
-          { error: "Campaign is not active" },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("info", "Campaign not active", {
+          requestId,
+          campaignId,
+          status: campaign.status,
+        });
+        return actionBadRequest("Campaign is not active");
       }
 
       // Check deadline
       if (new Date(campaign.deadline) <= new Date()) {
-        return NextResponse.json(
-          { error: "Campaign has ended" },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("info", "Campaign has ended", { requestId, campaignId });
+        return actionBadRequest("Campaign has ended");
       }
 
       const goalSol = lamportsToSol(BigInt(campaign.goalLamports));
@@ -112,6 +120,12 @@ export async function GET(req: NextRequest) {
         links: { actions },
       };
 
+      log("info", "GET campaign action metadata", {
+        requestId,
+        campaignId,
+        progressPercent,
+      });
+
       return NextResponse.json(response, {
         headers: {
           ...ACTIONS_CORS_HEADERS,
@@ -123,10 +137,7 @@ export async function GET(req: NextRequest) {
     // Legacy URL-based mode
     const parseResult = campaignParamsSchema.safeParse(rawParams);
     if (!parseResult.success) {
-      return NextResponse.json(
-        { error: "Invalid request parameters" },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest("Invalid request parameters");
     }
 
     const params = parseResult.data;
@@ -135,10 +146,7 @@ export async function GET(req: NextRequest) {
     if (params.wallet) {
       const validWallet = validateWalletAddress(params.wallet);
       if (!validWallet) {
-        return NextResponse.json(
-          { error: 'Invalid "wallet" address' },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        return actionBadRequest('Invalid "wallet" address');
       }
     }
 
@@ -183,11 +191,11 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("GET /api/actions/donate error:", error);
-    return NextResponse.json(
-      { error: "Invalid request parameters" },
-      { status: 400, headers: ACTIONS_CORS_HEADERS },
-    );
+    log("error", "GET /api/actions/donate error", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return actionBadRequest("Invalid request parameters");
   }
 }
 
@@ -195,14 +203,18 @@ export async function GET(req: NextRequest) {
  * POST handler - Builds and returns donation transaction
  */
 export async function POST(req: NextRequest) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
   // Rate limiting
   const clientIp = getClientIp(req);
   const rateLimitResponse = checkRateLimit(
     rateLimitConfigs.donate,
     clientIp,
-    "donate",
+    "donate"
   );
   if (rateLimitResponse) {
+    log("warn", "Rate limit exceeded for donation", { requestId, ip: clientIp });
     // Merge CORS headers with rate limit response
     const headers = new Headers(rateLimitResponse.headers);
     Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
@@ -225,18 +237,12 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest("Invalid JSON body");
     }
 
     const bodyParseResult = postBodySchema.safeParse(body);
     if (!bodyParseResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid "account" in request body' },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest('Invalid "account" in request body');
     }
 
     const { account } = bodyParseResult.data;
@@ -244,20 +250,14 @@ export async function POST(req: NextRequest) {
     // Validate donor wallet
     const donorWallet = validateWalletAddress(account);
     if (!donorWallet) {
-      return NextResponse.json(
-        { error: 'Invalid "account" in request body' },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest('Invalid "account" in request body');
     }
 
     // Validate amount
     const amountSol = validateAmount(amountParam || "");
     if (amountSol === null) {
-      return NextResponse.json(
-        {
-          error: `Invalid "amount": must be between ${SOLANA_CONFIG.MIN_AMOUNT} and ${SOLANA_CONFIG.MAX_AMOUNT} SOL`,
-        },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
+      return actionBadRequest(
+        `Invalid "amount": must be between ${SOLANA_CONFIG.MIN_AMOUNT} and ${SOLANA_CONFIG.MAX_AMOUNT} SOL`
       );
     }
 
@@ -265,53 +265,85 @@ export async function POST(req: NextRequest) {
     if (campaignId) {
       const campaign = await getCampaignById(campaignId);
       if (!campaign) {
-        return NextResponse.json(
-          { error: "Campaign not found" },
-          { status: 404, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("warn", "Campaign not found for POST", { requestId, campaignId });
+        return actionNotFound("Campaign not found");
       }
 
       // Check campaign is active
       if (campaign.status !== "active") {
-        return NextResponse.json(
-          { error: "Campaign is not active" },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("info", "Attempted donation to inactive campaign", {
+          requestId,
+          campaignId,
+          status: campaign.status,
+        });
+        return actionBadRequest("Campaign is not active");
       }
 
       // Check deadline
       if (new Date(campaign.deadline) <= new Date()) {
-        return NextResponse.json(
-          { error: "Campaign has ended" },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        log("info", "Attempted donation to ended campaign", {
+          requestId,
+          campaignId,
+        });
+        return actionBadRequest("Campaign has ended");
       }
 
       // Calculate fees
       const fees = calculateFeeSplit(amountSol);
       const feePercent = (SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0);
 
-      // Create pending donation record
-      const donation = await createDonation({
+      // Generate idempotency key
+      const idempotencyKey = generateIdempotencyKey(
+        campaign.id,
+        donorWallet.toBase58(),
+        fees.totalLamports.toString()
+      );
+
+      // Create pending donation record with idempotency
+      const { donation, isNew } = await createDonationWithIdempotency({
         campaignId: campaign.id,
         donorWallet: donorWallet.toBase58(),
         amountLamports: fees.totalLamports.toString(),
         platformFeeLamports: fees.platformFeeLamports.toString(),
         creatorLamports: fees.creatorLamports.toString(),
         status: "pending",
+        idempotencyKey,
       });
 
+      if (!isNew) {
+        log("info", "Returning existing donation (idempotency hit)", {
+          requestId,
+          donationId: donation.id,
+          campaignId,
+        });
+      }
+
       // Build transaction
+      const creatorWallet = validateWalletAddress(campaign.creatorWallet);
+      if (!creatorWallet) {
+        log("error", "Invalid creator wallet in campaign", {
+          requestId,
+          campaignId,
+        });
+        return actionServerError("Campaign configuration error");
+      }
+
       const transaction = await buildDonationTransaction({
         donor: donorWallet,
-        creator: validateWalletAddress(campaign.creatorWallet)!,
+        creator: creatorWallet,
         amountSol,
       });
 
-      // Log for debugging
-      console.log(
-        `[Donate] campaign=${campaignId} donation=${donation.id} amount=${amountSol} cluster=${SOLANA_CONFIG.CLUSTER}`,
-      );
+      const durationMs = Date.now() - startTime;
+      logDonation("created", {
+        requestId,
+        donationId: donation.id,
+        campaignId,
+        donorWallet: donorWallet.toBase58().slice(0, 8) + "...",
+        amount: amountSol,
+        cluster: SOLANA_CONFIG.CLUSTER,
+        durationMs,
+      });
 
       // Create response with donation ID in message for tracking
       const response = await createPostResponse({
@@ -328,29 +360,20 @@ export async function POST(req: NextRequest) {
     // Legacy URL-based mode
     const parseResult = campaignParamsSchema.safeParse(rawParams);
     if (!parseResult.success) {
-      return NextResponse.json(
-        { error: "Invalid request parameters" },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest("Invalid request parameters");
     }
 
     const params = parseResult.data;
 
     // Wallet is required for legacy mode
     if (!params.wallet) {
-      return NextResponse.json(
-        { error: 'Missing required "wallet" parameter' },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest('Missing required "wallet" parameter');
     }
 
     // Validate creator wallet
     const creatorWallet = validateWalletAddress(params.wallet);
     if (!creatorWallet) {
-      return NextResponse.json(
-        { error: 'Invalid "wallet" address' },
-        { status: 400, headers: ACTIONS_CORS_HEADERS },
-      );
+      return actionBadRequest('Invalid "wallet" address');
     }
 
     // Build transaction
@@ -360,13 +383,18 @@ export async function POST(req: NextRequest) {
       amountSol,
     });
 
+    // Calculate fees for message
+    const fees = calculateFeeSplit(amountSol);
     const feePercent = (SOLANA_CONFIG.PLATFORM_FEE_PERCENT * 100).toFixed(0);
     const campaignTitle = params.title || "this project";
 
-    // Log for debugging (no PII)
-    console.log(
-      `[Donate] legacy mode cluster=${SOLANA_CONFIG.CLUSTER} amount=${amountSol} fee=${feePercent}%`,
-    );
+    const durationMs = Date.now() - startTime;
+    log("info", "Legacy donation transaction built", {
+      requestId,
+      cluster: SOLANA_CONFIG.CLUSTER,
+      amount: amountSol,
+      durationMs,
+    });
 
     // Create response with transaction and message
     const response = await createPostResponse({
@@ -379,21 +407,24 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response, { headers: ACTIONS_CORS_HEADERS });
   } catch (error) {
-    console.error("POST /api/actions/donate error:", error);
+    const durationMs = Date.now() - startTime;
+    log("error", "POST /api/actions/donate error", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+      durationMs,
+    });
 
     // Handle specific errors
     if (error instanceof Error) {
       if (error.message.includes("too small")) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400, headers: ACTIONS_CORS_HEADERS },
-        );
+        return actionBadRequest(error.message);
+      }
+      if (error.message.includes("CRITICAL")) {
+        // Platform configuration error - don't expose details
+        return actionServerError("Service temporarily unavailable");
       }
     }
 
-    return NextResponse.json(
-      { error: "Failed to create transaction" },
-      { status: 500, headers: ACTIONS_CORS_HEADERS },
-    );
+    return actionServerError("Failed to create transaction");
   }
 }

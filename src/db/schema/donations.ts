@@ -53,6 +53,10 @@ export const donations = pgTable(
     // Solana transaction signature (unique identifier)
     txSignature: text("tx_signature").unique(),
 
+    // Idempotency key to prevent duplicate donations
+    // Format: {campaignId}:{donorWallet}:{amountLamports}:{timestamp_window}
+    idempotencyKey: text("idempotency_key").unique(),
+
     // Donation status
     status: donationStatusEnum("status").default("pending").notNull(),
 
@@ -69,6 +73,8 @@ export const donations = pgTable(
     index("donations_tx_signature_idx").on(table.txSignature),
     // Index for filtering by status
     index("donations_status_idx").on(table.status),
+    // Index for idempotency key lookups
+    index("donations_idempotency_key_idx").on(table.idempotencyKey),
   ],
 );
 
