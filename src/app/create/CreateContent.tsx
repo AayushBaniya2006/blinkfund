@@ -23,8 +23,8 @@ import {
   ImageIcon,
   Link as LinkIcon,
   X,
+  Upload,
 } from "lucide-react";
-import S3Uploader from "@/components/ui/s3-uploader/s3-uploader";
 import { toast } from "sonner";
 
 type Step = "verify" | "details" | "preview" | "success";
@@ -62,6 +62,59 @@ export default function CreateCampaignPage() {
     deadline: "",
   });
   const [imageInputMode, setImageInputMode] = useState<"upload" | "url">("upload");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload/campaign-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      handleInputChange("imageUrl", data.url);
+      toast.success("Image uploaded!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
 
   // Calculate minimum deadline (tomorrow)
   const tomorrow = new Date();
@@ -451,21 +504,44 @@ export default function CreateCampaignPage() {
                             </Button>
                           </div>
                         ) : (
-                          <S3Uploader
-                            presignedRouteProvider="/api/upload/campaign-image"
-                            variant="dropzone"
-                            accept="image/jpeg,image/png,image/gif,image/webp"
-                            maxSize={5 * 1024 * 1024}
-                            maxFiles={1}
-                            dropzoneText="Drag & drop your campaign image"
-                            dropzoneSubtext="PNG, JPG, GIF or WebP (max 5MB)"
-                            onUpload={async (urls) => {
-                              if (urls[0]) {
-                                handleInputChange("imageUrl", urls[0]);
-                                toast.success("Image uploaded successfully!");
-                              }
-                            }}
-                          />
+                          <div
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                              isDragging
+                                ? "border-primary bg-primary/5"
+                                : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                            }`}
+                          >
+                            <input
+                              type="file"
+                              id="image-upload"
+                              accept="image/jpeg,image/png,image/gif,image/webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(file);
+                              }}
+                              className="hidden"
+                              disabled={isUploading}
+                            />
+                            <label
+                              htmlFor="image-upload"
+                              className="cursor-pointer flex flex-col items-center gap-2"
+                            >
+                              {isUploading ? (
+                                <Loader2 className="w-10 h-10 text-muted-foreground animate-spin" />
+                              ) : (
+                                <Upload className="w-10 h-10 text-muted-foreground" />
+                              )}
+                              <span className="font-medium">
+                                {isUploading ? "Uploading..." : "Drag & drop your campaign image"}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                or click to browse (PNG, JPG, GIF, WebP - max 5MB)
+                              </span>
+                            </label>
+                          </div>
                         )}
                       </div>
                     ) : (

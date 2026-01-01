@@ -1,10 +1,10 @@
 /**
- * API Route for getting presigned S3 upload URLs for campaign images
- * POST - Returns presigned URL and fields for direct S3 upload
+ * API Route for uploading campaign images using Vercel Blob
+ * POST - Uploads image and returns the URL
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import createS3UploadFields from "@/lib/s3/createS3UploadFields";
+import { put } from "@vercel/blob";
 import { v4 as uuidv4 } from "uuid";
 
 // Allowed image types
@@ -20,19 +20,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { fileName, fileType, fileSize } = body;
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
 
-    // Validate required fields
-    if (!fileName || !fileType || !fileSize) {
+    if (!file) {
       return NextResponse.json(
-        { error: "Missing required fields: fileName, fileType, fileSize" },
+        { error: "No file provided" },
         { status: 400 }
       );
     }
 
     // Validate file type
-    if (!ALLOWED_TYPES.includes(fileType)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: `Invalid file type. Allowed: ${ALLOWED_TYPES.join(", ")}` },
         { status: 400 }
@@ -40,33 +39,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate file size
-    if (fileSize > MAX_FILE_SIZE) {
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
         { status: 400 }
       );
     }
 
-    // Generate unique file path
-    const fileExtension = fileName.split(".").pop() || "jpg";
-    const uniqueFileName = `${uuidv4()}.${fileExtension}`;
-    const path = `campaigns/images/${uniqueFileName}`;
+    // Generate unique filename
+    const fileExtension = file.name.split(".").pop() || "jpg";
+    const uniqueFileName = `campaigns/${uuidv4()}.${fileExtension}`;
 
-    // Get presigned post data
-    const presignedPost = await createS3UploadFields({
-      path,
-      maxSize: MAX_FILE_SIZE,
-      contentType: fileType,
+    // Upload to Vercel Blob
+    const blob = await put(uniqueFileName, file, {
+      access: "public",
+      addRandomSuffix: false,
     });
 
     return NextResponse.json({
-      url: presignedPost.url,
-      fields: presignedPost.fields,
+      url: blob.url,
+      success: true,
     });
   } catch (error) {
-    console.error("Error creating presigned URL:", error);
+    console.error("Error uploading to Vercel Blob:", error);
     return NextResponse.json(
-      { error: "Failed to create upload URL" },
+      { error: "Failed to upload image" },
       { status: 500 }
     );
   }
