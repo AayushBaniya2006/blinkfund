@@ -158,7 +158,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - public API routes (actions, og, webhooks, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/actions|api/og|api/webhooks|api/campaigns|api/wallet|api/donations|api/contact|api/waitlist|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
