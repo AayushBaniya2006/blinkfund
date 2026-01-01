@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limiting
   const clientIp = getClientIp(req);
-  const rateLimitResponse = checkRateLimit(
+  const rateLimitResponse = await checkRateLimit(
     rateLimitConfigs.walletVerify,
     clientIp,
     "wallet-verify"
@@ -163,8 +163,9 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     const now = new Date();
-    // Set expiry to 30 days from now
-    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // SECURITY: Set expiry to 7 days (reduced from 30 for better security)
+    // Users need to re-verify periodically to prove continued wallet ownership
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     if (existing.length > 0) {
       // Update existing verification

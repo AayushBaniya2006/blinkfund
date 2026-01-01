@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limiting
   const clientIp = getClientIp(req);
-  const rateLimitResponse = checkRateLimit(
+  const rateLimitResponse = await checkRateLimit(
     rateLimitConfigs.donate,
     clientIp,
     "donate",

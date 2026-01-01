@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientIp = getClientIp(request);
-    const rateLimitResponse = checkRateLimit(contactRateLimit, clientIp, "contact");
+    const rateLimitResponse = await checkRateLimit(contactRateLimit, clientIp, "contact");
     if (rateLimitResponse) return rateLimitResponse;
 
     // Parse and validate body

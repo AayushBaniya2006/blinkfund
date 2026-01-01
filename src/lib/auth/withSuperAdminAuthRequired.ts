@@ -12,6 +12,24 @@ interface WithManagerHandler {
   ): Promise<NextResponse | Response>;
 }
 
+/**
+ * Check if an email is a super admin
+ * Case-insensitive comparison with trimmed whitespace
+ */
+export function isSuperAdmin(email: string | null | undefined): boolean {
+  if (!email || !process.env.SUPER_ADMIN_EMAILS) {
+    return false;
+  }
+
+  const adminEmails = new Set(
+    process.env.SUPER_ADMIN_EMAILS.split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  return adminEmails.has(email.toLowerCase().trim());
+}
+
 const withSuperAdminAuthRequired = (handler: WithManagerHandler) => {
   return async (
     req: NextRequest,
@@ -41,9 +59,7 @@ const withSuperAdminAuthRequired = (handler: WithManagerHandler) => {
       );
     }
 
-    if (
-      !process.env.SUPER_ADMIN_EMAILS?.split(",").includes(session.user?.email)
-    ) {
+    if (!isSuperAdmin(session.user.email)) {
       return NextResponse.json(
         {
           error: "Unauthorized",

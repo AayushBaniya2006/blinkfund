@@ -28,18 +28,15 @@ export async function OPTIONS() {
  * This preserves the PNG content-type while adding required CORS headers
  */
 function addCorsHeaders(imageResponse: ImageResponse): Response {
-  const response = new Response(imageResponse.body, {
+  // Create new headers with CORS + content-type
+  const headers = new Headers(ACTIONS_CORS_HEADERS);
+  headers.set("Content-Type", "image/png");
+
+  return new Response(imageResponse.body, {
     status: imageResponse.status,
     statusText: imageResponse.statusText,
-    headers: imageResponse.headers,
+    headers,
   });
-
-  // Add CORS headers
-  Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-
-  return response;
 }
 
 /**

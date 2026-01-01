@@ -15,6 +15,13 @@
       "when": 1767198472916,
       "tag": "0001_demonic_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767292412789,
+      "tag": "0002_harsh_sersi",
+      "breakpoints": true
     }
   ]
 }

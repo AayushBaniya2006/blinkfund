@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "./auth";
 import type { NextRequest } from "next/server";
+import { isSuperAdmin } from "./lib/auth/withSuperAdminAuthRequired";
 
 export async function proxy(req: NextRequest) {
   const session = await auth();
@@ -42,9 +43,8 @@ export async function proxy(req: NextRequest) {
   }
 
   if (req.nextUrl.pathname.startsWith("/super-admin")) {
-    const adminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",");
-    const currentUserEmail = session?.user?.email;
-    if (!currentUserEmail || !adminEmails?.includes(currentUserEmail)) {
+    // SECURITY: Use case-insensitive super admin check
+    if (!isSuperAdmin(session?.user?.email)) {
       return NextResponse.redirect(
         new URL("/sign-in?error=unauthorized", req.url)
       );

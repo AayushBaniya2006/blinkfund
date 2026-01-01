@@ -26,6 +26,21 @@ export interface LogContext {
   status?: string;
   progressPercent?: number;
   expiredCount?: number;
+  // Security/Auth related
+  email?: string;
+  actorEmail?: string;
+  targetEmail?: string;
+  resourceType?: string;
+  resourceId?: string;
+  attempts?: number;
+  limit?: number;
+  prefix?: string;
+  identifier?: string;
+  count?: number;
+  unlocksAt?: string;
+  lockedUntil?: string;
+  adminAction?: string;
+  action?: string;
 }
 
 type LogLevel = "debug" | "info" | "warn" | "error";

@@ -15,6 +15,13 @@ import sendMail from "./lib/email/sendMail";
 import { appConfig } from "./lib/config";
 import { decryptJson } from "./lib/encryption/edge-jwt";
 import { eq } from "drizzle-orm";
+import { checkEmailRateLimit } from "./lib/ratelimit";
+import { log } from "./lib/logging";
+import {
+  isAccountLocked,
+  recordFailedAttempt,
+  clearLockout,
+} from "./lib/auth/lockout";
 
 // Overrides default session type
 declare module "next-auth" {
@@ -40,11 +47,25 @@ const emailProvider: EmailConfig = {
   type: "email",
   name: "Email",
   async sendVerificationRequest(params) {
+    // SECURITY: Rate limit magic link emails to prevent abuse
+    const rateLimitResult = await checkEmailRateLimit(params.identifier);
+    if (rateLimitResult) {
+      // Rate limit exceeded - log and silently skip sending
+      // We don't throw to avoid exposing rate limit info to attackers
+      log("warn", "Magic link rate limit exceeded", {
+        email: params.identifier.slice(0, 3) + "***", // Partially redact
+      });
+      // Still return successfully to not reveal rate limiting to user
+      // The verification token is created but email not sent
+      return;
+    }
+
     if (process.env.NODE_ENV === "development") {
       console.log(
         `Magic link for ${params.identifier}: ${params.url} expires at ${params.expires}`
       );
     }
+
     // TODO: Re-enable email templates after fixing react-email build issue
     const html = `
       <html>
@@ -60,6 +81,10 @@ const emailProvider: EmailConfig = {
       to: params.identifier,
       subject: `Sign in to ${appConfig.projectName}`,
       html,
+    });
+
+    log("info", "Magic link email sent", {
+      email: params.identifier.slice(0, 3) + "***",
     });
   },
 };
@@ -131,7 +156,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      // SECURITY: Removed allowDangerousEmailAccountLinking to prevent account takeover
+      // Users must explicitly link accounts through a consent flow
     }),
     emailProvider,
     // Password-based authentication
@@ -156,7 +182,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 return null;
               }
 
+              const email = credentials.email as string;
+
               try {
+                // SECURITY: Check if account is locked due to too many failed attempts
+                const lockoutStatus = await isAccountLocked(email);
+                if (lockoutStatus.locked) {
+                  log("warn", "Login attempt on locked account", {
+                    email: email.slice(0, 3) + "***",
+                    unlocksAt: lockoutStatus.unlocksAt?.toISOString(),
+                  });
+                  // Return null to indicate failed auth
+                  // The lockout message should be shown via a separate API
+                  return null;
+                }
+
                 // Find user by email
                 const user = await db
                   .select({
@@ -166,11 +206,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     password: users.password,
                   })
                   .from(users)
-                  .where(eq(users.email, credentials.email as string))
+                  .where(eq(users.email, email))
                   .limit(1)
                   .then((users) => users[0]);
 
                 if (!user || !user.password) {
+                  // Record failed attempt even for non-existent users
+                  // This prevents user enumeration attacks
+                  await recordFailedAttempt(email);
                   return null;
                 }
 
@@ -182,8 +225,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 );
 
                 if (!passwordCorrect) {
+                  // SECURITY: Record failed attempt
+                  const result = await recordFailedAttempt(email);
+                  if (result.locked) {
+                    log("warn", "Account locked after failed attempt", {
+                      email: email.slice(0, 3) + "***",
+                    });
+                  }
                   return null;
                 }
+
+                // SECURITY: Clear lockout on successful login
+                await clearLockout(email);
+
+                log("info", "Successful password login", {
+                  email: email.slice(0, 3) + "***",
+                });
 
                 return {
                   id: user.id,
@@ -191,7 +248,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   name: user.name,
                 };
               } catch (error) {
-                console.error("Error during password authentication:", error);
+                log("error", "Password authentication error", {
+                  error: error instanceof Error ? error.name : "Unknown",
+                });
                 return null;
               }
             },
