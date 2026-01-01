@@ -1,15 +1,27 @@
 /**
  * Dynamic OG Image Generator for Campaigns
  * Generates campaign-specific preview images for social sharing
+ * Includes CORS headers for Solana Actions/Blinks compatibility
  */
 
 import { ImageResponse } from "next/og";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCampaignById } from "@/lib/campaigns/queries";
 import { lamportsToSol } from "@/lib/campaigns/validation";
+import { ACTIONS_CORS_HEADERS } from "@solana/actions";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
+
+/**
+ * OPTIONS handler for CORS preflight (required for Solana Actions/Blinks)
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: ACTIONS_CORS_HEADERS,
+  });
+}
 
 /**
  * Sanitize text for safe SVG rendering
@@ -31,7 +43,7 @@ function sanitizeText(text: string, maxLength: number = 200): string {
 }
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -90,7 +102,7 @@ export async function GET(
             </span>
           </div>
         ),
-        { width: WIDTH, height: HEIGHT },
+        { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
       );
     }
 
@@ -308,7 +320,7 @@ export async function GET(
           </div>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT },
+      { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
     );
   } catch (error) {
     console.error("OG Image generation error:", error);
@@ -358,7 +370,7 @@ export async function GET(
           </span>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT },
+      { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
     );
   }
 }
