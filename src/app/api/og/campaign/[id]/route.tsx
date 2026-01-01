@@ -14,22 +14,32 @@ const WIDTH = 1200;
 const HEIGHT = 630;
 
 /**
- * Combined headers for OG image responses
- * Includes CORS headers for Solana Actions/Blinks and proper content-type
- */
-const OG_IMAGE_HEADERS = {
-  ...ACTIONS_CORS_HEADERS,
-  "Content-Type": "image/png",
-};
-
-/**
  * OPTIONS handler for CORS preflight (required for Solana Actions/Blinks)
  */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: OG_IMAGE_HEADERS,
+    headers: ACTIONS_CORS_HEADERS,
   });
+}
+
+/**
+ * Add CORS headers to an ImageResponse
+ * This preserves the PNG content-type while adding required CORS headers
+ */
+function addCorsHeaders(imageResponse: ImageResponse): Response {
+  const response = new Response(imageResponse.body, {
+    status: imageResponse.status,
+    statusText: imageResponse.statusText,
+    headers: imageResponse.headers,
+  });
+
+  // Add CORS headers
+  Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  return response;
 }
 
 /**
@@ -60,7 +70,7 @@ export async function GET(
     const campaign = await getCampaignById(id);
 
     if (!campaign) {
-      return new ImageResponse(
+      return addCorsHeaders(new ImageResponse(
         (
           <div
             style={{
@@ -111,8 +121,8 @@ export async function GET(
             </span>
           </div>
         ),
-        { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
-      );
+        { width: WIDTH, height: HEIGHT },
+      ));
     }
 
     const goalSol = lamportsToSol(BigInt(campaign.goalLamports));
@@ -127,7 +137,7 @@ export async function GET(
     );
     const isExpired = deadline <= now;
 
-    return new ImageResponse(
+    return addCorsHeaders(new ImageResponse(
       (
         <div
           style={{
@@ -329,11 +339,11 @@ export async function GET(
           </div>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
-    );
+      { width: WIDTH, height: HEIGHT },
+    ));
   } catch (error) {
     console.error("OG Image generation error:", error);
-    return new ImageResponse(
+    return addCorsHeaders(new ImageResponse(
       (
         <div
           style={{
@@ -379,7 +389,7 @@ export async function GET(
           </span>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
-    );
+      { width: WIDTH, height: HEIGHT },
+    ));
   }
 }
