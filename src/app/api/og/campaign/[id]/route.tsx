@@ -14,12 +14,21 @@ const WIDTH = 1200;
 const HEIGHT = 630;
 
 /**
+ * Combined headers for OG image responses
+ * Includes CORS headers for Solana Actions/Blinks and proper content-type
+ */
+const OG_IMAGE_HEADERS = {
+  ...ACTIONS_CORS_HEADERS,
+  "Content-Type": "image/png",
+};
+
+/**
  * OPTIONS handler for CORS preflight (required for Solana Actions/Blinks)
  */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: ACTIONS_CORS_HEADERS,
+    headers: OG_IMAGE_HEADERS,
   });
 }
 
@@ -102,7 +111,7 @@ export async function GET(
             </span>
           </div>
         ),
-        { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
+        { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
       );
     }
 
@@ -320,7 +329,7 @@ export async function GET(
           </div>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
+      { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
     );
   } catch (error) {
     console.error("OG Image generation error:", error);
@@ -370,7 +379,7 @@ export async function GET(
           </span>
         </div>
       ),
-      { width: WIDTH, height: HEIGHT, headers: ACTIONS_CORS_HEADERS },
+      { width: WIDTH, height: HEIGHT, headers: OG_IMAGE_HEADERS },
     );
   }
 }
