@@ -5,6 +5,10 @@
  * This replaces ad-hoc auth checks in individual routes.
  */
 
+// Force Node.js runtime because auth imports database code (postgres-js)
+// which is not compatible with Edge Runtime
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "./auth";
@@ -42,7 +46,7 @@ const ROUTE_CONFIG = {
  */
 function matchesPrefix(pathname: string, prefixes: string[]): boolean {
   return prefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
@@ -90,11 +94,14 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { error: "Unauthorized", message: "Authentication required" },
-          { status: 401 }
+          { status: 401 },
         );
       }
       return NextResponse.redirect(
-        new URL(`/sign-in?callbackUrl=${encodeURIComponent(pathname)}`, request.url)
+        new URL(
+          `/sign-in?callbackUrl=${encodeURIComponent(pathname)}`,
+          request.url,
+        ),
       );
     }
 
@@ -103,11 +110,11 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { error: "Forbidden", message: "Super admin access required" },
-          { status: 403 }
+          { status: 403 },
         );
       }
       return NextResponse.redirect(
-        new URL("/sign-in?error=unauthorized", request.url)
+        new URL("/sign-in?error=unauthorized", request.url),
       );
     }
 
@@ -121,7 +128,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { error: "Unauthorized", message: "Authentication required" },
-          { status: 401 }
+          { status: 401 },
         );
       }
 
@@ -132,7 +139,10 @@ export async function middleware(request: NextRequest) {
       }
 
       return NextResponse.redirect(
-        new URL(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+        new URL(
+          `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+          request.url,
+        ),
       );
     }
 
