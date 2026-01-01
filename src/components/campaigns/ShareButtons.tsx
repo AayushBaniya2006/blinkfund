@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Twitter, Copy, Check, Share2, Zap } from "lucide-react";
+import { Twitter, Copy, Check, Share2, Zap, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ShareButtonsProps {
@@ -20,14 +20,18 @@ export function ShareButtons({
 }: ShareButtonsProps) {
   const [copied, setCopied] = useState<"link" | "blink" | null>(null);
 
-  // dial.to URL enables Blinks to work on X/Twitter
+  // dial.to URL enables Blinks to work on X/Twitter - THIS IS THE PRIMARY URL TO SHARE
   const dialToUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(blinkUrl)}`;
 
   const handleCopy = async (text: string, type: "link" | "blink") => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(type);
-      toast.success(type === "blink" ? "Blink URL copied!" : "Link copied!");
+      toast.success(
+        type === "blink"
+          ? "Blink URL copied! Share this on X for inline donations."
+          : "Page link copied (note: use Blink URL for X/Twitter)"
+      );
       setTimeout(() => setCopied(null), 2000);
     } catch {
       toast.error("Failed to copy");
@@ -47,22 +51,17 @@ export function ShareButtons({
         Share Campaign
       </h3>
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleCopy(campaignUrl, "link")}
-          className="gap-2"
-        >
-          {copied === "link" ? (
-            <Check className="h-4 w-4 text-green-500" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
-          Copy Link
+        {/* PRIMARY: Share on X - this is what most users want */}
+        <Button asChild variant="default" size="sm" className="gap-2">
+          <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
+            <Twitter className="h-4 w-4" />
+            Share on X
+          </a>
         </Button>
 
+        {/* Copy Blink URL - for sharing on X manually */}
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => handleCopy(dialToUrl, "blink")}
           className="gap-2"
@@ -72,18 +71,27 @@ export function ShareButtons({
           ) : (
             <Zap className="h-4 w-4" />
           )}
-          Copy Blink
+          Copy Blink URL
         </Button>
 
-        <Button asChild variant="default" size="sm" className="gap-2">
-          <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
-            <Twitter className="h-4 w-4" />
-            Share on X
-          </a>
+        {/* Copy page link - secondary option for non-X sharing */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleCopy(campaignUrl, "link")}
+          className="gap-2 text-muted-foreground"
+        >
+          {copied === "link" ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Link2 className="h-4 w-4" />
+          )}
+          Copy Page Link
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-2">
-        Share on X to let people donate directly from the post!
+        <strong>Tip:</strong> Use &quot;Share on X&quot; or &quot;Copy Blink URL&quot; for X/Twitter -
+        this enables inline donations directly from your post!
       </p>
     </div>
   );

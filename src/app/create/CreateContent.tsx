@@ -24,6 +24,8 @@ import {
   Link as LinkIcon,
   X,
   Upload,
+  Twitter,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -689,22 +691,49 @@ export default function CreateCampaignPage() {
                   </p>
 
                   <div className="space-y-3">
+                    {/* PRIMARY: Share on X - this is what users should do first */}
                     <Button
+                      asChild
+                      className="w-full gap-2"
+                    >
+                      <a
+                        href={(() => {
+                          const blinkUrl = `${window.location.origin}/api/actions/donate?campaign=${createdCampaign.id}`;
+                          const dialToUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(blinkUrl)}`;
+                          const tweetText = encodeURIComponent(
+                            `Support "${createdCampaign.title}" on @FundOnBlink!\n\nDonate directly from this post:\n${dialToUrl}`
+                          );
+                          return `https://twitter.com/intent/tweet?text=${tweetText}`;
+                        })()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Twitter className="h-4 w-4" />
+                        Share on X
+                      </a>
+                    </Button>
+
+                    {/* Copy Blink URL for manual sharing */}
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        const blinkUrl = `${window.location.origin}/api/actions/donate?campaign=${createdCampaign.id}`;
+                        const dialToUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(blinkUrl)}`;
+                        navigator.clipboard.writeText(dialToUrl);
+                        toast.success("Blink URL copied! Share this on X for inline donations.");
+                      }}
+                      className="w-full gap-2"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Blink URL
+                    </Button>
+
+                    <Button
+                      variant="outline"
                       onClick={() => router.push(createdCampaign.url)}
                       className="w-full"
                     >
-                      View Campaign
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const url = `${window.location.origin}${createdCampaign.url}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Campaign URL copied!");
-                      }}
-                      className="w-full"
-                    >
-                      Copy Campaign Link
+                      View Campaign Page
                     </Button>
                     <Button
                       variant="ghost"
@@ -714,6 +743,10 @@ export default function CreateCampaignPage() {
                       Go to Dashboard
                     </Button>
                   </div>
+
+                  <p className="text-xs text-muted-foreground mt-4">
+                    <strong>Tip:</strong> Share on X to let people donate directly from your post!
+                  </p>
                 </CardContent>
               </Card>
             </div>
