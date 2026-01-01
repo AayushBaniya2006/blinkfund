@@ -20,7 +20,11 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  ImageIcon,
+  Link as LinkIcon,
+  X,
 } from "lucide-react";
+import S3Uploader from "@/components/ui/s3-uploader/s3-uploader";
 import { toast } from "sonner";
 
 type Step = "verify" | "details" | "preview" | "success";
@@ -57,6 +61,7 @@ export default function CreateCampaignPage() {
     goalSol: "",
     deadline: "",
   });
+  const [imageInputMode, setImageInputMode] = useState<"upload" | "url">("upload");
 
   // Calculate minimum deadline (tomorrow)
   const tomorrow = new Date();
@@ -398,17 +403,96 @@ export default function CreateCampaignPage() {
                     </p>
                   </div>
 
-                  {/* Image URL */}
-                  <div className="space-y-2">
-                    <Label htmlFor="image">Image URL (Optional)</Label>
-                    <Input
-                      id="image"
-                      type="url"
-                      placeholder="https://example.com/image.jpg"
-                      value={formData.imageUrl}
-                      onChange={(e) => handleInputChange("imageUrl", e.target.value)}
-                      className={errors.imageUrl ? "border-destructive" : ""}
-                    />
+                  {/* Campaign Image */}
+                  <div className="space-y-3">
+                    <Label>Campaign Image (Optional)</Label>
+
+                    {/* Toggle between upload and URL */}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={imageInputMode === "upload" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setImageInputMode("upload")}
+                        className="flex-1"
+                      >
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Upload Image
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={imageInputMode === "url" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setImageInputMode("url")}
+                        className="flex-1"
+                      >
+                        <LinkIcon className="w-4 h-4 mr-2" />
+                        Use URL
+                      </Button>
+                    </div>
+
+                    {imageInputMode === "upload" ? (
+                      <div className="space-y-2">
+                        {formData.imageUrl ? (
+                          <div className="relative rounded-lg overflow-hidden border">
+                            <img
+                              src={formData.imageUrl}
+                              alt="Campaign preview"
+                              className="w-full h-48 object-cover"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 h-8 w-8"
+                              onClick={() => handleInputChange("imageUrl", "")}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <S3Uploader
+                            presignedRouteProvider="/api/upload/campaign-image"
+                            variant="dropzone"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            maxSize={5 * 1024 * 1024}
+                            maxFiles={1}
+                            dropzoneText="Drag & drop your campaign image"
+                            dropzoneSubtext="PNG, JPG, GIF or WebP (max 5MB)"
+                            onUpload={async (urls) => {
+                              if (urls[0]) {
+                                handleInputChange("imageUrl", urls[0]);
+                                toast.success("Image uploaded successfully!");
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Input
+                          id="image"
+                          type="url"
+                          placeholder="https://example.com/image.jpg"
+                          value={formData.imageUrl}
+                          onChange={(e) => handleInputChange("imageUrl", e.target.value)}
+                          className={errors.imageUrl ? "border-destructive" : ""}
+                        />
+                        {formData.imageUrl && isValidUrl(formData.imageUrl) && (
+                          <div className="relative rounded-lg overflow-hidden border">
+                            <img
+                              src={formData.imageUrl}
+                              alt="Campaign preview"
+                              className="w-full h-48 object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {errors.imageUrl && (
                       <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="w-4 h-4" />
