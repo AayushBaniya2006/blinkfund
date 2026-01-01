@@ -26,6 +26,8 @@ export interface LogContext {
   status?: string;
   progressPercent?: number;
   expiredCount?: number;
+  foundCount?: number;
+  deletedCount?: number;
   // Security/Auth related
   email?: string;
   actorEmail?: string;
