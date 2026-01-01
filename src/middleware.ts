@@ -57,15 +57,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get session once for all checks
-  const session = await auth();
-  const isAuthenticated = !!session?.user?.id;
-
   // === Public API Routes ===
   // These don't require authentication (they have their own security like wallet signatures)
+  // Check this BEFORE calling auth() to avoid unnecessary auth checks
   if (matchesPrefix(pathname, ROUTE_CONFIG.publicApi)) {
     return NextResponse.next();
   }
+
+  // Get session once for all checks (only for routes that need it)
+  const session = await auth();
+  const isAuthenticated = !!session?.user?.id;
 
   // === Auth Pages ===
   // Redirect authenticated users away from auth pages (except sign-out)
