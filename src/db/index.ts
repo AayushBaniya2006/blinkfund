@@ -1,25 +1,19 @@
-import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
-let _db: PostgresJsDatabase | null = null;
+let cachedDb: PostgresJsDatabase | null = null;
 
-function getDb(): PostgresJsDatabase {
-  if (!_db) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL environment variable is not set");
-    }
-    _db = drizzle(process.env.DATABASE_URL);
+export function getDb(): PostgresJsDatabase {
+  if (cachedDb) {
+    return cachedDb;
   }
-  return _db;
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+
+  cachedDb = drizzle(process.env.DATABASE_URL);
+  return cachedDb;
 }
 
-// Proxy that lazily initializes the database connection
-export const db = new Proxy({} as PostgresJsDatabase, {
-  get(_target, prop) {
-    const instance = getDb();
-    const value = instance[prop as keyof PostgresJsDatabase];
-    if (typeof value === "function") {
-      return value.bind(instance);
-    }
-    return value;
-  },
-});
+// Export a concrete Drizzle instance (not a Proxy) so adapters can detect the DB type
+export const db: PostgresJsDatabase = getDb();
