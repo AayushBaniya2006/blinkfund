@@ -59,10 +59,27 @@ export function WalletSignatureVerify({
       }
       const { message } = await challengeRes.json();
 
-      // Sign the message
+      // Sign the message with timeout
       setStatus("signing");
       const messageBytes = new TextEncoder().encode(message);
-      const signature = await signMessage(messageBytes);
+
+      // Add timeout to prevent getting stuck if wallet doesn't respond
+      const signWithTimeout = Promise.race([
+        signMessage(messageBytes),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "Signature request timed out. Please try again and check your wallet for the popup.",
+                ),
+              ),
+            30000,
+          ),
+        ),
+      ]);
+
+      const signature = await signWithTimeout;
 
       // Convert signature to base64 for transmission
       const signatureBase64 = btoa(String.fromCharCode(...signature));
@@ -101,9 +118,19 @@ export function WalletSignatureVerify({
   }, [publicKey, signMessage, onVerified, onError]);
 
   // Auto-verify when wallet connects (only if not already attempted)
+  // Add a small delay to ensure wallet adapter is fully ready
   useEffect(() => {
-    if (connected && publicKey && signMessage && !hasAttempted && status === "idle") {
-      handleVerify();
+    if (
+      connected &&
+      publicKey &&
+      signMessage &&
+      !hasAttempted &&
+      status === "idle"
+    ) {
+      const timer = setTimeout(() => {
+        handleVerify();
+      }, 500); // Give Phantom time to fully initialize
+      return () => clearTimeout(timer);
     }
   }, [connected, publicKey, signMessage, hasAttempted, status, handleVerify]);
 
@@ -216,7 +243,8 @@ export function WalletSignatureVerify({
           </div>
           {status === "signing" && (
             <p className="text-xs text-muted-foreground mt-3 text-center">
-              Check your {wallet?.adapter.name || "wallet"} for a signature request
+              Check your {wallet?.adapter.name || "wallet"} for a signature
+              request
             </p>
           )}
         </CardContent>

@@ -125,10 +125,11 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      // Use dynamic OG image for better social sharing
+      // Use campaign's uploaded image if available, otherwise fall back to dynamic OG image
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL || "https://blinkfund.vercel.app";
-      const dynamicIcon = `${appUrl}/api/og/campaign/${campaignId}`;
+      const dynamicIcon =
+        campaign.imageUrl || `${appUrl}/api/og/campaign/${campaignId}`;
 
       const response: ActionGetResponse = {
         type: "action",
