@@ -1,8 +1,20 @@
 {
   "rules": [
     {
-      "pathPattern": "/api/actions/donate**",
+      "pathPattern": "/campaigns/*",
+      "apiPath": "/api/actions/donate?campaign=*"
+    },
+    {
+      "pathPattern": "/c/*",
+      "apiPath": "/api/actions/donate?campaign=*"
+    },
+    {
+      "pathPattern": "/api/actions/donate",
       "apiPath": "/api/actions/donate"
+    },
+    {
+      "pathPattern": "/api/actions/donate/**",
+      "apiPath": "/api/actions/donate/**"
     }
   ]
 }
