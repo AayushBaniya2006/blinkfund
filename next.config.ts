@@ -130,7 +130,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // actions.json endpoint also needs CORS
+        // actions.json endpoint also needs CORS + no cache
         source: "/actions.json",
         headers: [
           {
@@ -144,6 +144,10 @@ const nextConfig: NextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
           },
         ],
       },
