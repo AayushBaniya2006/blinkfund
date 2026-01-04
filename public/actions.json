@@ -16,5 +16,6 @@
       "pathPattern": "/api/actions/donate/**",
       "apiPath": "/api/actions/donate/**"
     }
-  ]
+  ],
+  "_version": 2
 }
