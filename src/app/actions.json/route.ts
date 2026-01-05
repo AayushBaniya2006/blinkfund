@@ -10,6 +10,12 @@ import { ACTIONS_CORS_HEADERS } from "@solana/actions";
 export async function GET() {
   const payload = {
     rules: [
+      // Map campaign page URLs to donate action (for X/Twitter unfurling)
+      {
+        pathPattern: "/campaign/*",
+        apiPath: "/api/actions/donate?slug=*",
+      },
+      // Map direct API calls
       {
         pathPattern: "/api/actions/donate**",
         apiPath: "/api/actions/donate",
@@ -20,7 +26,7 @@ export async function GET() {
   return NextResponse.json(payload, {
     headers: {
       ...ACTIONS_CORS_HEADERS,
-      "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+      "Cache-Control": "no-store, no-cache, must-revalidate", // No caching to ensure updates propagate
     },
   });
 }

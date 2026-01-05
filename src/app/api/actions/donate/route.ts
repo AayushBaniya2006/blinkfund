@@ -31,7 +31,7 @@ import {
   actionServerError,
 } from "@/lib/solana";
 
-import { getCampaignById } from "@/lib/campaigns/queries";
+import { getCampaignById, getCampaignBySlug } from "@/lib/campaigns/queries";
 
 import {
   createDonationWithIdempotency,
@@ -76,20 +76,26 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rawParams = Object.fromEntries(searchParams);
     const campaignId = searchParams.get("campaign");
+    const campaignSlug = searchParams.get("slug");
 
-    // Campaign-based mode
-    if (campaignId) {
-      const campaign = await getCampaignById(campaignId);
+    // Campaign-based mode (supports both ?campaign=<id> and ?slug=<slug>)
+    if (campaignId || campaignSlug) {
+      const campaign = campaignId
+        ? await getCampaignById(campaignId)
+        : await getCampaignBySlug(campaignSlug!);
       if (!campaign) {
-        log("warn", "Campaign not found for GET", { requestId, campaignId });
+        log("warn", "Campaign not found for GET", { requestId, campaignId: campaignId ?? campaignSlug ?? undefined });
         return actionNotFound("Campaign not found");
       }
+
+      // Use campaign.id for all subsequent operations (in case we looked up by slug)
+      const resolvedCampaignId = campaign.id;
 
       // Check campaign is active
       if (campaign.status !== "active") {
         log("info", "Campaign not active", {
           requestId,
-          campaignId,
+          campaignId: resolvedCampaignId,
           status: campaign.status,
         });
         return actionBadRequest("Campaign is not active");
@@ -97,7 +103,7 @@ export async function GET(req: NextRequest) {
 
       // Check deadline
       if (new Date(campaign.deadline) <= new Date()) {
-        log("info", "Campaign has ended", { requestId, campaignId });
+        log("info", "Campaign has ended", { requestId, campaignId: resolvedCampaignId });
         return actionBadRequest("Campaign has ended");
       }
 
@@ -112,10 +118,10 @@ export async function GET(req: NextRequest) {
       const baseUrl = new URL(req.url);
       baseUrl.search = "";
 
-      // Generate action links for preset amounts
+      // Generate action links for preset amounts (always use campaign ID, not slug)
       const actions = SOLANA_CONFIG.AMOUNT_PRESETS.map((amount) => {
         const actionUrl = new URL(baseUrl);
-        actionUrl.searchParams.set("campaign", campaignId);
+        actionUrl.searchParams.set("campaign", resolvedCampaignId);
         actionUrl.searchParams.set("amount", amount.toString());
 
         return {
@@ -129,7 +135,7 @@ export async function GET(req: NextRequest) {
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL || "https://blinkfund.vercel.app";
       const dynamicIcon =
-        campaign.imageUrl || `${appUrl}/api/og/campaign/${campaignId}`;
+        campaign.imageUrl || `${appUrl}/api/og/campaign/${resolvedCampaignId}`;
 
       const response: ActionGetResponse = {
         type: "action",
@@ -142,7 +148,7 @@ export async function GET(req: NextRequest) {
 
       log("info", "GET campaign action metadata", {
         requestId,
-        campaignId,
+        campaignId: resolvedCampaignId,
         progressPercent,
       });
 
@@ -247,6 +253,7 @@ export async function POST(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rawParams = Object.fromEntries(searchParams);
     const campaignId = searchParams.get("campaign");
+    const campaignSlug = searchParams.get("slug");
     const amountParam = searchParams.get("amount");
 
     // Parse request body for donor account
@@ -278,19 +285,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Campaign-based mode
-    if (campaignId) {
-      const campaign = await getCampaignById(campaignId);
+    // Campaign-based mode (supports both ?campaign=<id> and ?slug=<slug>)
+    if (campaignId || campaignSlug) {
+      const campaign = campaignId
+        ? await getCampaignById(campaignId)
+        : await getCampaignBySlug(campaignSlug!);
       if (!campaign) {
-        log("warn", "Campaign not found for POST", { requestId, campaignId });
+        log("warn", "Campaign not found for POST", { requestId, campaignId: campaignId ?? campaignSlug ?? undefined });
         return actionNotFound("Campaign not found");
       }
+
+      // Use campaign.id for all subsequent operations
+      const resolvedCampaignId = campaign.id;
 
       // Check campaign is active
       if (campaign.status !== "active") {
         log("info", "Attempted donation to inactive campaign", {
           requestId,
-          campaignId,
+          campaignId: resolvedCampaignId,
           status: campaign.status,
         });
         return actionBadRequest("Campaign is not active");
@@ -300,7 +312,7 @@ export async function POST(req: NextRequest) {
       if (new Date(campaign.deadline) <= new Date()) {
         log("info", "Attempted donation to ended campaign", {
           requestId,
-          campaignId,
+          campaignId: resolvedCampaignId,
         });
         return actionBadRequest("Campaign has ended");
       }
@@ -311,14 +323,14 @@ export async function POST(req: NextRequest) {
 
       // Generate idempotency key
       const idempotencyKey = generateIdempotencyKey(
-        campaign.id,
+        resolvedCampaignId,
         donorWallet.toBase58(),
         fees.totalLamports.toString(),
       );
 
       // Create pending donation record with idempotency
       const { donation, isNew } = await createDonationWithIdempotency({
-        campaignId: campaign.id,
+        campaignId: resolvedCampaignId,
         donorWallet: donorWallet.toBase58(),
         amountLamports: fees.totalLamports.toString(),
         platformFeeLamports: fees.platformFeeLamports.toString(),
@@ -331,7 +343,7 @@ export async function POST(req: NextRequest) {
         log("info", "Returning existing donation (idempotency hit)", {
           requestId,
           donationId: donation.id,
-          campaignId,
+          campaignId: resolvedCampaignId,
         });
       }
 
@@ -340,7 +352,7 @@ export async function POST(req: NextRequest) {
       if (!creatorWallet) {
         log("error", "Invalid creator wallet in campaign", {
           requestId,
-          campaignId,
+          campaignId: resolvedCampaignId,
         });
         return actionServerError("Campaign configuration error");
       }
@@ -355,7 +367,7 @@ export async function POST(req: NextRequest) {
       logDonation("created", {
         requestId,
         donationId: donation.id,
-        campaignId,
+        campaignId: resolvedCampaignId,
         donorWallet: donorWallet.toBase58().slice(0, 8) + "...",
         amount: amountSol,
         cluster: SOLANA_CONFIG.CLUSTER,
